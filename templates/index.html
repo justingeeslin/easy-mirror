@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Mirror - Webcam with CV Filters</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎥 Easy Mirror</h1>
+            <p>Webcam with Computer Vision Filters</p>
+        </header>
+
+        <main>
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <img id="videoStream" src="{{ url_for('video_feed') }}" alt="Video Stream">
+                    <div id="loadingOverlay" class="loading-overlay">
+                        <div class="spinner"></div>
+                        <p>Initializing camera...</p>
+                    </div>
+                    <div id="errorOverlay" class="error-overlay" style="display: none;">
+                        <div class="error-content">
+                            <h3>⚠️ Camera Error</h3>
+                            <p>Unable to access camera. Please check:</p>
+                            <ul>
+                                <li>Camera is connected</li>
+                                <li>Camera permissions are granted</li>
+                                <li>No other application is using the camera</li>
+                            </ul>
+                            <button onclick="location.reload()">Retry</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span id="cameraStatus" class="status-value">Connecting...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Filter:</span>
+                        <span id="currentFilter" class="status-value">None</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h3>🎨 Filters</h3>
+                <div class="filter-grid" id="filterGrid">
+                    <!-- Filters will be populated by JavaScript -->
+                </div>
+                
+                <div class="control-buttons">
+                    <button id="refreshBtn" class="btn btn-secondary">
+                        🔄 Refresh Camera
+                    </button>
+                    <button id="fullscreenBtn" class="btn btn-secondary">
+                        🔍 Fullscreen
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Compatible with Ubuntu and Raspberry Pi | Built with Flask & OpenCV</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
