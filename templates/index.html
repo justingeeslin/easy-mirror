@@ -67,9 +67,11 @@
 
         <footer>
             <p>Compatible with Ubuntu and Raspberry Pi | Built with Flask & OpenCV</p>
+            <p><a href="/notification-demo" style="color: rgba(255,255,255,0.8); text-decoration: none;">🔔 View Notification Demo</a></p>
         </footer>
     </div>
 
+    <script src="{{ url_for('static', filename='ios-notification.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

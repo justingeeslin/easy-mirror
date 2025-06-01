@@ -131,7 +131,7 @@ class EasyMirror {
             if (data.success) {
                 this.currentFilter = filterName;
                 this.updateCurrentFilterDisplay();
-                this.showNotification(`Filter changed to ${filterName}`, 'success');
+                this.showNotification(`Filter changed to ${filterName}`, 'success', filterName);
             } else {
                 throw new Error(data.error || 'Failed to set filter');
             }
@@ -240,54 +240,57 @@ class EasyMirror {
         document.getElementById('errorOverlay').style.display = 'none';
     }
 
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
+    showNotification(message, type = 'info', filterName = null) {
+        // Get appropriate icon for the notification
+        const icon = this.getNotificationIcon(type, filterName);
         
-        // Style the notification
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            color: 'white',
-            fontWeight: '500',
-            zIndex: '10000',
-            opacity: '0',
-            transform: 'translateX(100%)',
-            transition: 'all 0.3s ease'
+        // Use the iOS notification component
+        IOSNotification.show({
+            title: this.getNotificationTitle(type),
+            message: message,
+            type: type,
+            icon: icon,
+            duration: 3000
         });
+    }
 
-        // Set background color based on type
-        const colors = {
-            success: '#28a745',
-            error: '#dc3545',
-            info: '#17a2b8',
-            warning: '#ffc107'
+    getNotificationTitle(type) {
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            info: 'Info',
+            warning: 'Warning'
         };
-        notification.style.backgroundColor = colors[type] || colors.info;
+        return titles[type] || 'Notification';
+    }
 
-        document.body.appendChild(notification);
+    getNotificationIcon(type, filterName = null) {
+        // If it's a filter change, use filter-specific icon
+        if (filterName) {
+            const filterIcons = {
+                'none': '🔍',
+                'blur': '🌫️',
+                'edge': '📐',
+                'grayscale': '⚫',
+                'sepia': '🟤',
+                'invert': '🔄',
+                'emboss': '🎭',
+                'cartoon': '🎨',
+                'vintage': '📷',
+                'cool': '❄️',
+                'warm': '🔥'
+            };
+            return filterIcons[filterName] || '🎨';
+        }
 
-        // Animate in
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateX(0)';
-        }, 100);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+        // Default icons by type
+        const typeIcons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+        return typeIcons[type] || 'ℹ️';
     }
 
     destroy() {

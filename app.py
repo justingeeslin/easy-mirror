@@ -230,6 +230,11 @@ def index():
     """Serve the main page."""
     return render_template('index.html')
 
+@app.route('/notification-demo')
+def notification_demo():
+    """Serve the notification demo page."""
+    return render_template('notification-demo.html')
+
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route."""

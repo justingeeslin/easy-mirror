@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Notification Demo - Easy Mirror</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .demo-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .demo-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .demo-btn:active {
+            transform: translateY(0);
+        }
+
+        .code-example {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: background 0.2s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Easy Mirror</a>
+        
+        <h1>🔔 iOS Notification Demo</h1>
+
+        <div class="demo-section">
+            <h2>Basic Notification Types</h2>
+            <div class="button-grid">
+                <button class="demo-btn" onclick="showSuccess()">✅ Success</button>
+                <button class="demo-btn" onclick="showError()">❌ Error</button>
+                <button class="demo-btn" onclick="showWarning()">⚠️ Warning</button>
+                <button class="demo-btn" onclick="showInfo()">ℹ️ Info</button>
+            </div>
+            <div class="code-example">
+IOSNotification.success('Success!', 'Operation completed successfully');
+IOSNotification.error('Error!', 'Something went wrong');
+IOSNotification.warning('Warning!', 'Please check your input');
+IOSNotification.info('Info', 'Here is some information');
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Custom Notifications</h2>
+            <div class="button-grid">
+                <button class="demo-btn" onclick="showCustomIcon()">🎨 Custom Icon</button>
+                <button class="demo-btn" onclick="showLongDuration()">⏰ Long Duration</button>
+                <button class="demo-btn" onclick="showWithAction()">🔗 With Action</button>
+                <button class="demo-btn" onclick="showNoAutoDismiss()">📌 No Auto Dismiss</button>
+            </div>
+            <div class="code-example">
+IOSNotification.show({
+    title: 'Custom',
+    message: 'Custom icon and styling',
+    icon: '🎨',
+    type: 'info',
+    duration: 10000,
+    actionUrl: 'https://example.com'
+});
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Filter Change Simulations</h2>
+            <div class="button-grid">
+                <button class="demo-btn" onclick="showFilterBlur()">🌫️ Blur Filter</button>
+                <button class="demo-btn" onclick="showFilterEdge()">📐 Edge Filter</button>
+                <button class="demo-btn" onclick="showFilterSepia()">🟤 Sepia Filter</button>
+                <button class="demo-btn" onclick="showFilterCartoon()">🎨 Cartoon Filter</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Advanced Examples</h2>
+            <div class="button-grid">
+                <button class="demo-btn" onclick="showMultiple()">📚 Multiple Notifications</button>
+                <button class="demo-btn" onclick="showJavaScriptAction()">⚡ JavaScript Action</button>
+                <button class="demo-btn" onclick="showHTMLElement()">🏷️ HTML Element</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Features</h2>
+            <ul class="feature-list">
+                <li>iOS-style design with blur effects</li>
+                <li>Auto-dismiss with customizable duration</li>
+                <li>Manual dismiss with close button</li>
+                <li>Swipe to dismiss on touch devices</li>
+                <li>Click actions (URLs or JavaScript)</li>
+                <li>Progress bar animation</li>
+                <li>Responsive design</li>
+                <li>Dark mode support</li>
+                <li>Keyboard accessibility</li>
+                <li>Custom icons and types</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='ios-notification.js') }}"></script>
+    <script>
+        // Basic notification examples
+        function showSuccess() {
+            IOSNotification.success('Success!', 'Operation completed successfully');
+        }
+
+        function showError() {
+            IOSNotification.error('Error!', 'Something went wrong');
+        }
+
+        function showWarning() {
+            IOSNotification.warning('Warning!', 'Please check your input');
+        }
+
+        function showInfo() {
+            IOSNotification.info('Info', 'Here is some information');
+        }
+
+        // Custom notification examples
+        function showCustomIcon() {
+            IOSNotification.show({
+                title: 'Custom Design',
+                message: 'This notification has a custom icon and styling',
+                icon: '🎨',
+                type: 'info',
+                duration: 4000
+            });
+        }
+
+        function showLongDuration() {
+            IOSNotification.show({
+                title: 'Long Duration',
+                message: 'This notification will stay for 10 seconds',
+                icon: '⏰',
+                type: 'warning',
+                duration: 10000
+            });
+        }
+
+        function showWithAction() {
+            IOSNotification.show({
+                title: 'Click Me!',
+                message: 'This notification opens GitHub when clicked',
+                icon: '🔗',
+                type: 'info',
+                duration: 8000,
+                actionUrl: 'https://github.com/justingeeslin/easy-mirror'
+            });
+        }
+
+        function showNoAutoDismiss() {
+            IOSNotification.show({
+                title: 'Persistent',
+                message: 'This notification won\'t auto-dismiss (duration: 0)',
+                icon: '📌',
+                type: 'success',
+                duration: 0
+            });
+        }
+
+        // Filter change simulations
+        function showFilterBlur() {
+            IOSNotification.show({
+                title: 'Filter Applied',
+                message: 'Blur filter activated',
+                icon: '🌫️',
+                type: 'success',
+                duration: 3000
+            });
+        }
+
+        function showFilterEdge() {
+            IOSNotification.show({
+                title: 'Filter Applied',
+                message: 'Edge detection filter activated',
+                icon: '📐',
+                type: 'success',
+                duration: 3000
+            });
+        }
+
+        function showFilterSepia() {
+            IOSNotification.show({
+                title: 'Filter Applied',
+                message: 'Sepia filter activated',
+                icon: '🟤',
+                type: 'success',
+                duration: 3000
+            });
+        }
+
+        function showFilterCartoon() {
+            IOSNotification.show({
+                title: 'Filter Applied',
+                message: 'Cartoon filter activated',
+                icon: '🎨',
+                type: 'success',
+                duration: 3000
+            });
+        }
+
+        // Advanced examples
+        function showMultiple() {
+            IOSNotification.info('First', 'This is the first notification');
+            setTimeout(() => {
+                IOSNotification.success('Second', 'This is the second notification');
+            }, 1000);
+            setTimeout(() => {
+                IOSNotification.warning('Third', 'This is the third notification');
+            }, 2000);
+        }
+
+        function showJavaScriptAction() {
+            IOSNotification.show({
+                title: 'JavaScript Action',
+                message: 'Click to execute custom JavaScript',
+                icon: '⚡',
+                type: 'info',
+                duration: 6000,
+                actionUrl: 'javascript:alert("Hello from notification action!")'
+            });
+        }
+
+        function showHTMLElement() {
+            // Create notification using HTML element
+            const notification = document.createElement('ios-notification');
+            notification.setAttribute('title', 'HTML Element');
+            notification.setAttribute('message', 'Created using HTML element syntax');
+            notification.setAttribute('icon', '🏷️');
+            notification.setAttribute('type', 'info');
+            notification.setAttribute('duration', '4000');
+            document.body.appendChild(notification);
+        }
+    </script>
+</body>
+</html>
