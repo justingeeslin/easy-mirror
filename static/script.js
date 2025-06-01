@@ -243,7 +243,7 @@ class EasyMirror {
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
+        notification.className = `glass notification notification-${type}`;
         notification.textContent = message;
         
         // Style the notification
@@ -263,10 +263,10 @@ class EasyMirror {
 
         // Set background color based on type
         const colors = {
-            success: '#28a745',
-            error: '#dc3545',
-            info: '#17a2b8',
-            warning: '#ffc107'
+            success: 'rgba(40, 167, 69, 0.5)',
+            error: 'rgba(220, 53, 69, 0.2)',
+            info: 'rgba(23, 162, 184, 0.2)',
+            warning: 'rgba(255, 193, 7, 0.2)'
         };
         notification.style.backgroundColor = colors[type] || colors.info;
 
