@@ -1,0 +1,66 @@
+{
+  "clothing_items": {
+    "shirts": {
+      "red_shirt": {
+        "file": "static/clothing/shirts/red_shirt.png",
+        "name": "Red T-Shirt",
+        "anchor_points": ["left_shoulder", "right_shoulder"],
+        "scale_factor": 1.0,
+        "offset": [0, 20]
+      },
+      "green_shirt": {
+        "file": "static/clothing/shirts/green_shirt.png",
+        "name": "Green T-Shirt",
+        "anchor_points": ["left_shoulder", "right_shoulder"],
+        "scale_factor": 1.0,
+        "offset": [0, 20]
+      },
+      "blue_shirt": {
+        "file": "static/clothing/shirts/blue_shirt.png",
+        "name": "Blue T-Shirt",
+        "anchor_points": ["left_shoulder", "right_shoulder"],
+        "scale_factor": 1.0,
+        "offset": [0, 20]
+      },
+      "yellow_shirt": {
+        "file": "static/clothing/shirts/yellow_shirt.png",
+        "name": "Yellow T-Shirt",
+        "anchor_points": ["left_shoulder", "right_shoulder"],
+        "scale_factor": 1.0,
+        "offset": [0, 20]
+      }
+    },
+    "hats": {
+      "red_cap": {
+        "file": "static/clothing/hats/red_cap.png",
+        "name": "Red Cap",
+        "anchor_points": ["nose"],
+        "scale_factor": 1.2,
+        "offset": [0, -80]
+      },
+      "blue_cap": {
+        "file": "static/clothing/hats/blue_cap.png",
+        "name": "Blue Cap",
+        "anchor_points": ["nose"],
+        "scale_factor": 1.2,
+        "offset": [0, -80]
+      },
+      "black_cap": {
+        "file": "static/clothing/hats/black_cap.png",
+        "name": "Black Cap",
+        "anchor_points": ["nose"],
+        "scale_factor": 1.2,
+        "offset": [0, -80]
+      }
+    },
+    "accessories": {
+      "glasses": {
+        "file": "static/clothing/accessories/glasses.png",
+        "name": "Glasses",
+        "anchor_points": ["nose"],
+        "scale_factor": 1.0,
+        "offset": [0, -10]
+      }
+    }
+  }
+}

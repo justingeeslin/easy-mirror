@@ -20,6 +20,14 @@ try:
 except ImportError:
     DEMO_AVAILABLE = False
 
+# Import clothing overlay system
+try:
+    from clothing_overlay import ClothingOverlay
+    CLOTHING_AVAILABLE = True
+except ImportError:
+    CLOTHING_AVAILABLE = False
+    logging.warning("Clothing overlay not available - install mediapipe to enable clothing filters")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,6 +43,15 @@ class WebcamFilter:
         self.frame_lock = threading.Lock()
         self.latest_frame = None
         
+        # Initialize clothing overlay system
+        self.clothing_overlay = None
+        if CLOTHING_AVAILABLE:
+            try:
+                self.clothing_overlay = ClothingOverlay()
+                logger.info("Clothing overlay system initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize clothing overlay: {e}")
+        
         # Available filters
         self.filters = {
             'none': self.no_filter,
@@ -47,7 +64,8 @@ class WebcamFilter:
             'cartoon': self.cartoon_filter,
             'vintage': self.vintage_filter,
             'cool': self.cool_filter,
-            'warm': self.warm_filter
+            'warm': self.warm_filter,
+            'clothing': self.clothing_filter
         }
         
         self.initialize_camera()
@@ -181,6 +199,12 @@ class WebcamFilter:
         frame_warm[:, :, 2] = np.clip(frame_warm[:, :, 2] * 1.2, 0, 255)  # Red
         return frame_warm
     
+    def clothing_filter(self, frame):
+        """Apply clothing overlay filter."""
+        if self.clothing_overlay:
+            return self.clothing_overlay.apply_clothing_filter(frame)
+        return frame
+    
     def get_frame(self):
         """Capture and process a frame."""
         if not self.camera or not self.camera.isOpened():
@@ -274,7 +298,51 @@ def get_status():
     return jsonify({
         'camera_available': camera_available,
         'current_filter': webcam_filter.current_filter,
-        'filters_count': len(webcam_filter.get_available_filters())
+        'filters_count': len(webcam_filter.get_available_filters()),
+        'clothing_available': CLOTHING_AVAILABLE
+    })
+
+@app.route('/api/clothing', methods=['GET'])
+def get_clothing():
+    """Get available clothing items and current selection."""
+    if not webcam_filter.clothing_overlay:
+        return jsonify({'error': 'Clothing system not available'}), 400
+    
+    return jsonify({
+        'available': webcam_filter.clothing_overlay.get_available_clothing(),
+        'current': webcam_filter.clothing_overlay.get_current_clothing()
+    })
+
+@app.route('/api/clothing/<category>/<item_id>', methods=['POST'])
+def set_clothing_item(category, item_id):
+    """Set a clothing item for a specific category."""
+    if not webcam_filter.clothing_overlay:
+        return jsonify({'error': 'Clothing system not available'}), 400
+    
+    # Handle 'none' as removing the item
+    if item_id.lower() == 'none':
+        item_id = None
+    
+    if webcam_filter.clothing_overlay.set_clothing_item(category, item_id):
+        return jsonify({
+            'success': True,
+            'category': category,
+            'item': item_id,
+            'current': webcam_filter.clothing_overlay.get_current_clothing()
+        })
+    else:
+        return jsonify({'error': 'Invalid clothing item or category'}), 400
+
+@app.route('/api/clothing/clear', methods=['POST'])
+def clear_clothing():
+    """Clear all clothing items."""
+    if not webcam_filter.clothing_overlay:
+        return jsonify({'error': 'Clothing system not available'}), 400
+    
+    webcam_filter.clothing_overlay.clear_all_clothing()
+    return jsonify({
+        'success': True,
+        'current': webcam_filter.clothing_overlay.get_current_clothing()
     })
 
 @app.errorhandler(404)
