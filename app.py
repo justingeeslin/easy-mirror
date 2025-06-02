@@ -12,6 +12,7 @@ import threading
 import time
 import logging
 import os
+import argparse
 
 # Import demo mode for testing
 try:
@@ -286,9 +287,17 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Easy Mirror - Webcam with CV Filters')
+    parser.add_argument('--port', type=int, default=12000, help='Port to run the server on (default: 12000)')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    args = parser.parse_args()
+    
     try:
         # Run the Flask app
-        app.run(host='0.0.0.0', port=12000, debug=False, threaded=True)
+        logger.info(f"Starting Easy Mirror on {args.host}:{args.port}")
+        app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:

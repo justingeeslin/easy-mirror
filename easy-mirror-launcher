@@ -1,0 +1,185 @@
+#!/bin/bash
+# Easy Mirror Launcher Script
+# This script launches the Easy Mirror application in fullscreen mode
+
+set -e
+
+# Configuration
+APP_DIR="/usr/local/share/easy-mirror"
+VENV_DIR="$APP_DIR/venv"
+LOG_FILE="$HOME/.easy-mirror.log"
+PID_FILE="$HOME/.easy-mirror.pid"
+PORT=12000
+URL="http://localhost:$PORT"
+
+# Function to log messages
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+# Function to cleanup on exit
+cleanup() {
+    log "Cleaning up Easy Mirror..."
+    
+    # Kill the Flask app if it's running
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if kill -0 "$PID" 2>/dev/null; then
+            log "Stopping Flask app (PID: $PID)"
+            kill "$PID" 2>/dev/null || true
+            sleep 2
+            # Force kill if still running
+            kill -9 "$PID" 2>/dev/null || true
+        fi
+        rm -f "$PID_FILE"
+    fi
+    
+    # Kill any remaining processes
+    pkill -f "python.*app.py" 2>/dev/null || true
+    
+    log "Cleanup completed"
+}
+
+# Set up signal handlers
+trap cleanup EXIT INT TERM
+
+# Function to wait for server to be ready
+wait_for_server() {
+    local max_attempts=30
+    local attempt=1
+    
+    log "Waiting for server to start..."
+    while [ $attempt -le $max_attempts ]; do
+        if curl -s "$URL/api/status" >/dev/null 2>&1; then
+            log "Server is ready!"
+            return 0
+        fi
+        log "Attempt $attempt/$max_attempts - Server not ready yet..."
+        sleep 1
+        attempt=$((attempt + 1))
+    done
+    
+    log "Server failed to start within timeout"
+    return 1
+}
+
+# Function to find available browser
+find_browser() {
+    # Try browsers in order of preference for fullscreen/kiosk mode
+    for browser in chromium-browser chromium google-chrome firefox-esr firefox; do
+        if command -v "$browser" >/dev/null 2>&1; then
+            echo "$browser"
+            return 0
+        fi
+    done
+    
+    # Fallback to any available browser
+    for browser in x-www-browser www-browser; do
+        if command -v "$browser" >/dev/null 2>&1; then
+            echo "$browser"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Function to get browser arguments for fullscreen
+get_browser_args() {
+    local browser="$1"
+    case "$browser" in
+        chromium*|google-chrome)
+            echo "--kiosk --no-first-run --disable-infobars --disable-session-crashed-bubble --disable-translate --disable-features=TranslateUI --autoplay-policy=no-user-gesture-required"
+            ;;
+        firefox*)
+            echo "-kiosk"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+# Main execution
+main() {
+    log "Starting Easy Mirror application..."
+    
+    # Check if app directory exists
+    if [ ! -d "$APP_DIR" ]; then
+        log "Error: Application directory $APP_DIR not found"
+        zenity --error --text="Easy Mirror is not properly installed.\nPlease run the installation script first." 2>/dev/null || \
+        echo "Error: Easy Mirror is not properly installed. Please run the installation script first."
+        exit 1
+    fi
+    
+    # Change to app directory
+    cd "$APP_DIR"
+    
+    # Activate virtual environment
+    if [ -f "$VENV_DIR/bin/activate" ]; then
+        log "Activating virtual environment..."
+        source "$VENV_DIR/bin/activate"
+    else
+        log "Warning: Virtual environment not found, using system Python"
+    fi
+    
+    # Check if port is already in use
+    if netstat -tuln 2>/dev/null | grep -q ":$PORT "; then
+        log "Port $PORT is already in use, trying to connect to existing instance..."
+        if curl -s "$URL/api/status" >/dev/null 2>&1; then
+            log "Found existing Easy Mirror instance, connecting to it..."
+        else
+            log "Port is occupied by another service, trying alternative port..."
+            PORT=12001
+            URL="http://localhost:$PORT"
+        fi
+    fi
+    
+    # Start the Flask application if not already running
+    if ! curl -s "$URL/api/status" >/dev/null 2>&1; then
+        log "Starting Flask application on port $PORT..."
+        python3 app.py --port "$PORT" &
+        FLASK_PID=$!
+        echo "$FLASK_PID" > "$PID_FILE"
+        log "Flask app started with PID: $FLASK_PID"
+        
+        # Wait for server to be ready
+        if ! wait_for_server; then
+            log "Failed to start server"
+            exit 1
+        fi
+    else
+        log "Flask application already running"
+    fi
+    
+    # Find and launch browser
+    BROWSER=$(find_browser)
+    if [ -z "$BROWSER" ]; then
+        log "No suitable browser found"
+        zenity --error --text="No web browser found.\nPlease install chromium-browser or firefox." 2>/dev/null || \
+        echo "Error: No web browser found. Please install chromium-browser or firefox."
+        exit 1
+    fi
+    
+    log "Launching browser: $BROWSER"
+    BROWSER_ARGS=$(get_browser_args "$BROWSER")
+    
+    # Launch browser in fullscreen/kiosk mode
+    if [ -n "$BROWSER_ARGS" ]; then
+        log "Starting browser with args: $BROWSER_ARGS"
+        $BROWSER $BROWSER_ARGS "$URL" &
+    else
+        log "Starting browser in normal mode"
+        $BROWSER "$URL" &
+    fi
+    
+    BROWSER_PID=$!
+    log "Browser started with PID: $BROWSER_PID"
+    
+    # Wait for browser to exit
+    wait "$BROWSER_PID" 2>/dev/null || true
+    log "Browser closed, shutting down..."
+}
+
+# Run main function
+main "$@"
