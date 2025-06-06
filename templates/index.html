@@ -7,13 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="mirror">
     <div class="container">
-        <header>
-            <h1>🎥 Easy Mirror</h1>
-            <p>Webcam with Computer Vision Filters</p>
-        </header>
-
         <main>
             <div class="video-container">
                 <div class="video-wrapper">
@@ -36,38 +31,43 @@
                     </div>
                 </div>
                 
-                <div class="status-bar">
-                    <div class="status-item">
-                        <span class="status-label">Status:</span>
-                        <span id="cameraStatus" class="status-value">Connecting...</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Filter:</span>
-                        <span id="currentFilter" class="status-value">None</span>
-                    </div>
-                </div>
             </div>
-
-            <div class="controls">
+            <div class="controls glass">
                 <h3>🎨 Filters</h3>
                 <div class="filter-grid" id="filterGrid">
                     <!-- Filters will be populated by JavaScript -->
                 </div>
                 
-                <div class="control-buttons">
+                <div class="control-buttons" style="display:none;">
                     <button id="refreshBtn" class="btn btn-secondary">
                         🔄 Refresh Camera
                     </button>
                     <button id="fullscreenBtn" class="btn btn-secondary">
                         🔍 Fullscreen
                     </button>
+                    
+                    
+                </div>
+                
+                <footer>
+                    <p>Compatible with Ubuntu and Raspberry Pi | Built with Flask & OpenCV</p>
+                </footer>
+            </div>
+            <div class="status-bar"  style="display:none;">
+                <div class="status-item">
+                    <span class="status-label">Status:</span>
+                    <span id="cameraStatus" class="status-value">Connecting...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Filter:</span>
+                    <span id="currentFilter" class="status-value">None</span>
                 </div>
             </div>
+            
+            
         </main>
 
-        <footer>
-            <p>Compatible with Ubuntu and Raspberry Pi | Built with Flask & OpenCV</p>
-        </footer>
+        
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

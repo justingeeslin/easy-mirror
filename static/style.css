@@ -8,15 +8,14 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: black;
     min-height: 100vh;
     color: #333;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 100vw;
     margin: 0 auto;
-    padding: 20px;
 }
 
 header {
@@ -40,7 +39,7 @@ header p {
 
 main {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
     gap: 30px;
     align-items: start;
 }
@@ -54,10 +53,13 @@ main {
 
 /* Video Section */
 .video-container {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: -3;
+    position: fixed;
+    background: black;
+    width:100vw;
+    /* border-radius: 15px; */
+    /* padding: 20px; */
+    /* box-shadow: 0 10px 30px rgba(0,0,0,0.2); */
 }
 
 .video-wrapper {
@@ -146,9 +148,15 @@ main {
     color: #333;
 }
 
+div.glass {
+    background-color: rgba(0,0,0, 0.2); /* semi-transparent white */
+    backdrop-filter: blur(10px);               /* blur background behind */
+    -webkit-backdrop-filter: blur(10px);       /* Safari support */
+}
+
 /* Controls Section */
 .controls {
-    background: white;
+    margin-top: 90vh;
     border-radius: 15px;
     padding: 25px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -157,7 +165,7 @@ main {
 
 .controls h3 {
     margin-bottom: 20px;
-    color: #333;
+    color: #fff;
     font-size: 1.3rem;
     font-weight: 600;
 }
