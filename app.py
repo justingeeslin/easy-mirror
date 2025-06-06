@@ -36,6 +36,14 @@ except ImportError:
     MEASUREMENTS_AVAILABLE = False
     logging.warning("Anthropometric measurements not available - install mediapipe to enable measurements")
 
+# Import sex prediction system
+try:
+    from sex_prediction import SexPredictor
+    SEX_PREDICTION_AVAILABLE = True
+except ImportError:
+    SEX_PREDICTION_AVAILABLE = False
+    logging.warning("Sex prediction not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,6 +76,15 @@ class WebcamFilter:
                 logger.info("Anthropometric measurements system initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize anthropometric measurements: {e}")
+        
+        # Initialize sex prediction system
+        self.sex_predictor = None
+        if SEX_PREDICTION_AVAILABLE:
+            try:
+                self.sex_predictor = SexPredictor()
+                logger.info("Sex prediction system initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize sex prediction: {e}")
         
         # Available filters
         self.filters = {
@@ -410,6 +427,70 @@ def calibrate_measurements():
         })
     else:
         return jsonify({'error': 'Invalid calibration ratio'}), 400
+
+@app.route('/api/sex-prediction', methods=['GET'])
+def predict_sex():
+    """Predict biological sex based on current anthropometric measurements."""
+    if not webcam_filter.sex_predictor:
+        return jsonify({'error': 'Sex prediction system not available'}), 400
+    
+    if not webcam_filter.anthropometric_measurements:
+        return jsonify({'error': 'Anthropometric measurements system not available'}), 400
+    
+    # Get current frame
+    frame = None
+    if webcam_filter.camera and webcam_filter.camera.isOpened():
+        ret, frame = webcam_filter.camera.read()
+        if not ret:
+            return jsonify({'error': 'Could not capture frame from camera'}), 500
+    else:
+        return jsonify({'error': 'Camera not available'}), 500
+    
+    # Calculate measurements
+    measurements = webcam_filter.anthropometric_measurements.calculate_all_measurements(frame)
+    
+    if not measurements.get('pose_detected', False):
+        return jsonify({'error': 'No pose detected in current frame'}), 400
+    
+    # Predict sex
+    prediction_result = webcam_filter.sex_predictor.predict_sex(measurements)
+    
+    # Add the original measurements for reference
+    prediction_result['measurements_used'] = measurements
+    
+    return jsonify(prediction_result)
+
+@app.route('/api/sex-prediction/from-measurements', methods=['POST'])
+def predict_sex_from_measurements():
+    """Predict biological sex from provided measurements."""
+    if not webcam_filter.sex_predictor:
+        return jsonify({'error': 'Sex prediction system not available'}), 400
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Measurements data required'}), 400
+    
+    # Predict sex from provided measurements
+    prediction_result = webcam_filter.sex_predictor.predict_sex(data)
+    
+    return jsonify(prediction_result)
+
+@app.route('/api/sex-prediction/explanation', methods=['POST'])
+def get_sex_prediction_explanation():
+    """Get human-readable explanation of sex prediction result."""
+    if not webcam_filter.sex_predictor:
+        return jsonify({'error': 'Sex prediction system not available'}), 400
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Prediction result data required'}), 400
+    
+    explanation = webcam_filter.sex_predictor.get_prediction_explanation(data)
+    
+    return jsonify({
+        'explanation': explanation,
+        'prediction_data': data
+    })
 
 @app.errorhandler(404)
 def not_found(error):

@@ -48,6 +48,9 @@
                     <button id="measurementsBtn" class="btn btn-secondary">
                         📏 Measurements
                     </button>
+                    <button id="sexPredictionBtn" class="btn btn-secondary">
+                        🧬 Sex Prediction
+                    </button>
                 </div>
                 
                 <!-- Measurements Panel -->
@@ -77,6 +80,33 @@
                             </select>
                             <button id="setCalibrateBtn" class="btn btn-primary">Set Calibration</button>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Sex Prediction Panel -->
+                <div id="sexPredictionPanel" class="sex-prediction-panel" style="display: none;">
+                    <h3>🧬 Biological Sex Prediction</h3>
+                    <div class="sex-prediction-controls">
+                        <button id="predictSexBtn" class="btn btn-primary">
+                            🔬 Analyze Current Pose
+                        </button>
+                        <button id="showMethodologyBtn" class="btn btn-secondary">
+                            📖 Methodology
+                        </button>
+                    </div>
+                    <div id="sexPredictionResults" class="sex-prediction-results">
+                        <p class="sex-prediction-info">Click "Analyze Current Pose" to predict biological sex based on anthropometric measurements.</p>
+                    </div>
+                    <div id="methodologyPanel" class="methodology-panel" style="display: none;">
+                        <h4>Methodology</h4>
+                        <p>This system uses established patterns of sexual dimorphism in human body measurements:</p>
+                        <ul>
+                            <li><strong>Shoulder-to-hip ratio:</strong> Males typically have broader shoulders relative to hips</li>
+                            <li><strong>Height and limb proportions:</strong> Males often have longer limbs relative to height</li>
+                            <li><strong>Head circumference:</strong> Males typically have larger head circumference</li>
+                            <li><strong>Arm span to height ratio:</strong> Males often have longer arm spans relative to height</li>
+                        </ul>
+                        <p><em>Note: This is for educational/research purposes. Individual variation exists and predictions should be interpreted as estimates only.</em></p>
                     </div>
                 </div>
                 

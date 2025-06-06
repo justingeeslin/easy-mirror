@@ -53,6 +53,21 @@ class EasyMirror {
             this.setCalibration();
         });
 
+        // Sex prediction button
+        document.getElementById('sexPredictionBtn').addEventListener('click', () => {
+            this.toggleSexPredictionPanel();
+        });
+
+        // Predict sex button
+        document.getElementById('predictSexBtn').addEventListener('click', () => {
+            this.predictSex();
+        });
+
+        // Show methodology button
+        document.getElementById('showMethodologyBtn').addEventListener('click', () => {
+            this.toggleMethodologyPanel();
+        });
+
         // Video stream load events
         const videoStream = document.getElementById('videoStream');
         videoStream.addEventListener('load', () => {
@@ -684,6 +699,164 @@ class EasyMirror {
             console.error('Error setting calibration:', error);
             this.showNotification('Error setting calibration', 'error');
         }
+    }
+
+    toggleSexPredictionPanel() {
+        const panel = document.getElementById('sexPredictionPanel');
+        const isVisible = panel.style.display !== 'none';
+        
+        // Hide other panels
+        document.getElementById('measurementsPanel').style.display = 'none';
+        
+        panel.style.display = isVisible ? 'none' : 'block';
+    }
+
+    toggleMethodologyPanel() {
+        const panel = document.getElementById('methodologyPanel');
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+    }
+
+    async predictSex() {
+        const resultsDiv = document.getElementById('sexPredictionResults');
+        const predictBtn = document.getElementById('predictSexBtn');
+        
+        try {
+            predictBtn.disabled = true;
+            predictBtn.textContent = '🔬 Analyzing...';
+            
+            resultsDiv.innerHTML = '<div class="loading">Analyzing pose and calculating measurements...</div>';
+
+            const response = await fetch('/api/sex-prediction');
+            const data = await response.json();
+
+            if (response.ok) {
+                this.displaySexPredictionResults(data);
+            } else {
+                resultsDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            }
+
+        } catch (error) {
+            console.error('Error predicting sex:', error);
+            resultsDiv.innerHTML = '<div class="error">Error connecting to server</div>';
+        } finally {
+            predictBtn.disabled = false;
+            predictBtn.textContent = '🔬 Analyze Current Pose';
+        }
+    }
+
+    displaySexPredictionResults(data) {
+        const resultsDiv = document.getElementById('sexPredictionResults');
+        
+        if (data.prediction === 'error') {
+            resultsDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            return;
+        }
+
+        if (data.prediction === 'insufficient_data') {
+            resultsDiv.innerHTML = `
+                <div class="warning">
+                    <h4>⚠️ Insufficient Data</h4>
+                    <p>Not enough anthropometric measurements available for reliable prediction.</p>
+                    <p>Please ensure you are clearly visible in the camera with good lighting.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const prediction = data.prediction.toUpperCase();
+        const confidence = (data.confidence * 100).toFixed(1);
+        const certainty = (data.certainty * 100).toFixed(1);
+        const maleScore = (data.scores.male * 100).toFixed(1);
+        const femaleScore = (data.scores.female * 100).toFixed(1);
+
+        let predictionClass = 'prediction-result';
+        if (data.prediction === 'male') {
+            predictionClass += ' prediction-male';
+        } else if (data.prediction === 'female') {
+            predictionClass += ' prediction-female';
+        } else {
+            predictionClass += ' prediction-uncertain';
+        }
+
+        let html = `
+            <div class="${predictionClass}">
+                <h4>🧬 Prediction Results</h4>
+                <div class="prediction-summary">
+                    <div class="prediction-main">
+                        <span class="prediction-label">Predicted Sex:</span>
+                        <span class="prediction-value">${prediction}</span>
+                    </div>
+                    <div class="prediction-confidence">
+                        <span class="confidence-label">Confidence:</span>
+                        <span class="confidence-value">${confidence}%</span>
+                    </div>
+                    <div class="prediction-certainty">
+                        <span class="certainty-label">Certainty:</span>
+                        <span class="certainty-value">${certainty}%</span>
+                    </div>
+                </div>
+                
+                <div class="score-breakdown">
+                    <h5>Score Breakdown:</h5>
+                    <div class="score-bars">
+                        <div class="score-bar">
+                            <span class="score-label">Male:</span>
+                            <div class="score-bar-container">
+                                <div class="score-bar-fill male-score" style="width: ${maleScore}%"></div>
+                                <span class="score-value">${maleScore}%</span>
+                            </div>
+                        </div>
+                        <div class="score-bar">
+                            <span class="score-label">Female:</span>
+                            <div class="score-bar-container">
+                                <div class="score-bar-fill female-score" style="width: ${femaleScore}%"></div>
+                                <span class="score-value">${femaleScore}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="indicators-used">
+                    <h5>Indicators Used (${data.indicators_used}/${data.total_possible_indicators}):</h5>
+                    <div class="indicators-list">
+        `;
+
+        // Add indicator details
+        for (const [indicator, details] of Object.entries(data.indicator_details)) {
+            const indicatorName = indicator.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const value = details.value;
+            const prediction = details.prediction;
+            const confidence = (details.confidence * 100).toFixed(0);
+            
+            let unit = 'cm';
+            if (indicator.includes('ratio')) {
+                unit = '';
+                value = value.toFixed(3);
+            } else {
+                value = value.toFixed(1);
+            }
+            
+            html += `
+                <div class="indicator-item">
+                    <span class="indicator-name">${indicatorName}:</span>
+                    <span class="indicator-value">${value}${unit}</span>
+                    <span class="indicator-prediction ${prediction}">${prediction} (${confidence}%)</span>
+                </div>
+            `;
+        }
+
+        html += `
+                    </div>
+                </div>
+                
+                <div class="prediction-note">
+                    <p><strong>Note:</strong> This prediction is based on established patterns of sexual dimorphism in human anthropometry. Individual variation exists and predictions should be interpreted as estimates only. This tool is for educational and research purposes.</p>
+                </div>
+            </div>
+        `;
+
+        resultsDiv.innerHTML = html;
     }
 
     destroy() {
