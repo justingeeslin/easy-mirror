@@ -45,8 +45,39 @@
                     <button id="fullscreenBtn" class="btn btn-secondary">
                         🔍 Fullscreen
                     </button>
-                    
-                    
+                    <button id="measurementsBtn" class="btn btn-secondary">
+                        📏 Measurements
+                    </button>
+                </div>
+                
+                <!-- Measurements Panel -->
+                <div id="measurementsPanel" class="measurements-panel" style="display: none;">
+                    <h3>📏 Anthropometric Measurements</h3>
+                    <div class="measurements-controls">
+                        <button id="takeMeasurementBtn" class="btn btn-primary">
+                            📐 Take Measurement
+                        </button>
+                        <button id="calibrateBtn" class="btn btn-secondary">
+                            ⚙️ Calibrate
+                        </button>
+                    </div>
+                    <div id="measurementsResults" class="measurements-results">
+                        <p class="measurements-info">Click "Take Measurement" to analyze your pose and calculate body measurements.</p>
+                    </div>
+                    <div id="calibrationPanel" class="calibration-panel" style="display: none;">
+                        <h4>Calibration</h4>
+                        <p>Enter a known measurement to calibrate the system:</p>
+                        <div class="calibration-input">
+                            <label for="knownMeasurement">Known measurement (cm):</label>
+                            <input type="number" id="knownMeasurement" step="0.1" placeholder="e.g., 40.0">
+                            <select id="measurementType">
+                                <option value="shoulder_breadth">Shoulder Breadth</option>
+                                <option value="standing_height">Standing Height</option>
+                                <option value="arm_span">Arm Span</option>
+                            </select>
+                            <button id="setCalibrateBtn" class="btn btn-primary">Set Calibration</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <footer>

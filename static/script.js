@@ -8,6 +8,8 @@ class EasyMirror {
         this.clothingAvailable = false;
         this.currentClothing = {};
         this.availableClothing = {};
+        this.measurementsAvailable = false;
+        this.measurementDescriptions = {};
         this.init();
     }
 
@@ -15,6 +17,7 @@ class EasyMirror {
         this.setupEventListeners();
         this.loadFilters();
         this.loadClothing();
+        this.loadMeasurements();
         this.startStatusCheck();
         this.hideLoadingOverlay();
     }
@@ -28,6 +31,26 @@ class EasyMirror {
         // Fullscreen button
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
             this.toggleFullscreen();
+        });
+
+        // Measurements button
+        document.getElementById('measurementsBtn').addEventListener('click', () => {
+            this.toggleMeasurementsPanel();
+        });
+
+        // Take measurement button
+        document.getElementById('takeMeasurementBtn').addEventListener('click', () => {
+            this.takeMeasurement();
+        });
+
+        // Calibrate button
+        document.getElementById('calibrateBtn').addEventListener('click', () => {
+            this.toggleCalibrationPanel();
+        });
+
+        // Set calibration button
+        document.getElementById('setCalibrateBtn').addEventListener('click', () => {
+            this.setCalibration();
         });
 
         // Video stream load events
@@ -328,6 +351,14 @@ class EasyMirror {
             if (data.clothing_available && !this.clothingAvailable) {
                 this.loadClothing();
             }
+            
+            // Update measurements availability
+            if (data.measurements_available && !this.measurementsAvailable) {
+                this.loadMeasurements();
+                document.getElementById('measurementsBtn').style.display = 'inline-block';
+            } else if (!data.measurements_available) {
+                document.getElementById('measurementsBtn').style.display = 'none';
+            }
         } catch (error) {
             console.error('Error checking status:', error);
             const statusElement = document.getElementById('cameraStatus');
@@ -446,6 +477,213 @@ class EasyMirror {
                 }
             }, 300);
         }, 3000);
+    }
+
+    // Measurements functionality
+    async loadMeasurements() {
+        try {
+            const response = await fetch('/api/measurements/descriptions');
+            if (response.ok) {
+                this.measurementDescriptions = await response.json();
+                this.measurementsAvailable = true;
+            }
+        } catch (error) {
+            console.log('Measurements not available:', error);
+            this.measurementsAvailable = false;
+        }
+    }
+
+    toggleMeasurementsPanel() {
+        const panel = document.getElementById('measurementsPanel');
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible && this.measurementsAvailable) {
+            this.showMeasurementsInfo();
+        }
+    }
+
+    toggleCalibrationPanel() {
+        const panel = document.getElementById('calibrationPanel');
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+    }
+
+    async takeMeasurement() {
+        const resultsDiv = document.getElementById('measurementsResults');
+        const button = document.getElementById('takeMeasurementBtn');
+        
+        // Show loading state
+        button.disabled = true;
+        button.textContent = '📐 Measuring...';
+        resultsDiv.innerHTML = '<p class="measurements-info">Analyzing pose and calculating measurements...</p>';
+        
+        try {
+            const response = await fetch('/api/measurements');
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.displayMeasurements(data);
+                this.showNotification('Measurements calculated successfully!', 'success');
+            } else {
+                this.displayMeasurementError(data.error || 'Failed to get measurements');
+                this.showNotification('Failed to calculate measurements', 'error');
+            }
+        } catch (error) {
+            console.error('Error taking measurement:', error);
+            this.displayMeasurementError('Network error occurred');
+            this.showNotification('Network error occurred', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = '📐 Take Measurement';
+        }
+    }
+
+    displayMeasurements(data) {
+        const resultsDiv = document.getElementById('measurementsResults');
+        
+        if (!data.pose_detected) {
+            this.displayMeasurementError(data.error || 'No pose detected in frame');
+            return;
+        }
+        
+        let html = '<div class="measurements-data">';
+        
+        // Group measurements by category
+        const categories = {
+            'Basic Measurements': ['shoulder_breadth', 'standing_height', 'arm_span'],
+            'Upper Body': ['left_upper_arm_length', 'right_upper_arm_length', 'left_forearm_length', 'right_forearm_length'],
+            'Lower Body': ['left_thigh_length', 'right_thigh_length', 'left_lower_leg_length', 'right_lower_leg_length'],
+            'Circumferences (Estimated)': ['chest_circumference', 'waist_circumference', 'head_circumference']
+        };
+        
+        for (const [category, measurements] of Object.entries(categories)) {
+            const categoryMeasurements = measurements.filter(m => data[m] !== undefined);
+            if (categoryMeasurements.length > 0) {
+                html += `<div class="measurement-category">${category}</div>`;
+                
+                for (const measurement of categoryMeasurements) {
+                    const value = data[measurement];
+                    const label = this.formatMeasurementLabel(measurement);
+                    html += `
+                        <div class="measurement-item">
+                            <span class="measurement-label">${label}</span>
+                            <span class="measurement-value">${value.toFixed(1)}<span class="measurement-unit">cm</span></span>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        html += '</div>';
+        
+        // Add calibration note if present
+        if (data.calibration_note) {
+            html += `<div class="measurement-note">${data.calibration_note}</div>`;
+        }
+        
+        resultsDiv.innerHTML = html;
+    }
+
+    displayMeasurementError(error) {
+        const resultsDiv = document.getElementById('measurementsResults');
+        resultsDiv.innerHTML = `
+            <div class="measurements-error">
+                <strong>Error:</strong> ${error}
+                <br><br>
+                <strong>Tips:</strong>
+                <ul>
+                    <li>Stand facing the camera with your full body visible</li>
+                    <li>Ensure good lighting</li>
+                    <li>Keep arms slightly away from your body</li>
+                    <li>Stand in a neutral pose</li>
+                </ul>
+            </div>
+        `;
+    }
+
+    showMeasurementsInfo() {
+        const resultsDiv = document.getElementById('measurementsResults');
+        resultsDiv.innerHTML = `
+            <p class="measurements-info">
+                Click "Take Measurement" to analyze your pose and calculate body measurements.
+                <br><br>
+                <strong>Available measurements:</strong>
+                <ul style="text-align: left; margin-top: 10px;">
+                    <li>Shoulder breadth, standing height, arm span</li>
+                    <li>Upper and lower arm lengths (both sides)</li>
+                    <li>Thigh and lower leg lengths (both sides)</li>
+                    <li>Estimated circumferences (chest, waist, head)</li>
+                </ul>
+            </p>
+        `;
+    }
+
+    formatMeasurementLabel(measurement) {
+        const labels = {
+            'shoulder_breadth': 'Shoulder Breadth',
+            'standing_height': 'Standing Height',
+            'arm_span': 'Arm Span',
+            'left_upper_arm_length': 'Left Upper Arm',
+            'right_upper_arm_length': 'Right Upper Arm',
+            'left_forearm_length': 'Left Forearm',
+            'right_forearm_length': 'Right Forearm',
+            'left_thigh_length': 'Left Thigh',
+            'right_thigh_length': 'Right Thigh',
+            'left_lower_leg_length': 'Left Lower Leg',
+            'right_lower_leg_length': 'Right Lower Leg',
+            'chest_circumference': 'Chest Circumference',
+            'waist_circumference': 'Waist Circumference',
+            'head_circumference': 'Head Circumference'
+        };
+        return labels[measurement] || measurement.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    async setCalibration() {
+        const knownValue = parseFloat(document.getElementById('knownMeasurement').value);
+        const measurementType = document.getElementById('measurementType').value;
+        
+        if (!knownValue || knownValue <= 0) {
+            this.showNotification('Please enter a valid measurement value', 'error');
+            return;
+        }
+        
+        // First, take a measurement to get the current pixel value
+        try {
+            const response = await fetch('/api/measurements');
+            const data = await response.json();
+            
+            if (!response.ok || !data.pose_detected || !data[measurementType]) {
+                this.showNotification('Cannot calibrate: measurement not available in current pose', 'error');
+                return;
+            }
+            
+            const currentPixelValue = data[measurementType];
+            const newRatio = knownValue / currentPixelValue * 0.1; // Current ratio is 0.1
+            
+            // Set the new calibration
+            const calibrateResponse = await fetch('/api/measurements/calibrate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pixel_to_cm_ratio: newRatio
+                })
+            });
+            
+            if (calibrateResponse.ok) {
+                this.showNotification('Calibration updated successfully!', 'success');
+                document.getElementById('calibrationPanel').style.display = 'none';
+                document.getElementById('knownMeasurement').value = '';
+            } else {
+                this.showNotification('Failed to update calibration', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Error setting calibration:', error);
+            this.showNotification('Error setting calibration', 'error');
+        }
     }
 
     destroy() {
