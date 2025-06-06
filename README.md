@@ -6,6 +6,7 @@ A web-based webcam application with real-time computer vision filters, designed 
 
 - 📹 **Real-time webcam streaming** via web browser
 - 🎨 **11 CV filters**: None, Blur, Edge Detection, Grayscale, Sepia, Invert, Emboss, Cartoon, Vintage, Cool, Warm
+- 👕 **Virtual Clothing Filter**: Real-time clothing overlay using MediaPipe pose detection
 - 🖥️ **Cross-platform**: Works on Ubuntu, Raspberry Pi, and other Linux systems
 - 📱 **Responsive design**: Works on desktop and mobile browsers
 - ⌨️ **Keyboard shortcuts**: Number keys (1-9) for quick filter switching, F for fullscreen
@@ -126,6 +127,7 @@ camera_indices = [0, 1, 2, -1]  # Try different indices
 9. **Vintage** - Aged photo effect
 10. **Cool** - Cool color temperature
 11. **Warm** - Warm color temperature
+12. **Clothing** - Virtual clothing overlay with pose detection
 
 ### Keyboard Shortcuts
 
@@ -141,6 +143,9 @@ The application provides a REST API for integration:
 - `POST /api/filter` - Set current filter
 - `GET /api/status` - Get camera and application status
 - `GET /video_feed` - Video stream endpoint
+- `GET /api/clothing` - Get available clothing items
+- `POST /api/clothing/{category}/{item}` - Set clothing item
+- `POST /api/clothing/clear` - Clear all clothing
 
 ### Example API Usage
 
@@ -155,6 +160,15 @@ curl -X POST http://localhost:12000/api/filter \
 
 # Check status
 curl http://localhost:12000/api/status
+
+# Get available clothing
+curl http://localhost:12000/api/clothing
+
+# Set a blue t-shirt
+curl -X POST http://localhost:12000/api/clothing/shirts/blue_tshirt
+
+# Clear all clothing
+curl -X POST http://localhost:12000/api/clothing/clear
 ```
 
 ## Configuration
@@ -260,14 +274,21 @@ const filterNames = {
 
 ```
 easy-mirror/
-├── app.py              # Main Flask application
-├── requirements.txt    # Python dependencies
+├── app.py                    # Main Flask application
+├── clothing_overlay.py       # Virtual clothing system
+├── clothing_config.json      # Clothing item configuration
+├── requirements.txt          # Python dependencies
 ├── templates/
-│   └── index.html     # Main web interface
+│   └── index.html           # Main web interface
 ├── static/
-│   ├── style.css      # Styling
-│   └── script.js      # Frontend JavaScript
-└── README.md          # This file
+│   ├── style.css            # Styling
+│   ├── script.js            # Frontend JavaScript
+│   └── clothing/            # Clothing assets
+│       ├── shirts/          # T-shirt images
+│       ├── hats/            # Hat images
+│       └── accessories/     # Accessory images
+├── README.md                # This file
+└── CLOTHING_FILTER.md       # Clothing filter documentation
 ```
 
 ## Contributing
