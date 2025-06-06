@@ -390,3 +390,468 @@ footer {
         padding: 6px 8px;
     }
 }
+
+/* Measurements Panel Styles */
+.measurements-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.measurements-panel h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.measurements-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.measurements-results {
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    min-height: 100px;
+}
+
+.measurements-info {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.measurement-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.measurement-item:last-child {
+    border-bottom: none;
+}
+
+.measurement-label {
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+}
+
+.measurement-value {
+    font-weight: 600;
+    color: #007bff;
+    font-family: 'Courier New', monospace;
+}
+
+.measurement-unit {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 2px;
+}
+
+.calibration-panel {
+    background: rgba(255, 248, 220, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.calibration-panel h4 {
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.calibration-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.calibration-input label {
+    font-weight: 500;
+    color: #333;
+    min-width: 120px;
+}
+
+.calibration-input input,
+.calibration-input select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.calibration-input input:focus,
+.calibration-input select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.measurements-error {
+    background: rgba(220, 53, 69, 0.1);
+    color: #721c24;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    margin: 10px 0;
+}
+
+.measurements-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    margin: 10px 0;
+}
+
+.measurement-category {
+    font-weight: 600;
+    color: #495057;
+    margin: 15px 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #007bff;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.measurement-note {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .measurements-controls {
+        flex-direction: column;
+    }
+    
+    .calibration-input {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .calibration-input label {
+        min-width: auto;
+    }
+}
+
+/* Sex Prediction Styles */
+.sex-prediction-panel {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sex-prediction-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.sex-prediction-results {
+    min-height: 100px;
+}
+
+.sex-prediction-info {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.methodology-panel {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.methodology-panel h4 {
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.methodology-panel ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.methodology-panel li {
+    margin-bottom: 8px;
+}
+
+/* Prediction Results Styles */
+.prediction-result {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e9ecef;
+}
+
+.prediction-result.prediction-male {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+}
+
+.prediction-result.prediction-female {
+    border-color: #e91e63;
+    background: linear-gradient(135deg, #fff8f9 0%, #fce4ec 100%);
+}
+
+.prediction-result.prediction-uncertain {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fffdf7 0%, #fff3cd 100%);
+}
+
+.prediction-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.prediction-main .prediction-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.prediction-male .prediction-value {
+    color: #007bff;
+}
+
+.prediction-female .prediction-value {
+    color: #e91e63;
+}
+
+.prediction-uncertain .prediction-value {
+    color: #ffc107;
+}
+
+.confidence-value, .certainty-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-top: 5px;
+    color: #28a745;
+}
+
+.score-breakdown {
+    margin: 20px 0;
+}
+
+.score-breakdown h5 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.score-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.score-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.score-label {
+    min-width: 60px;
+    font-weight: 600;
+}
+
+.score-bar-container {
+    flex: 1;
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.score-bar-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.5s ease;
+}
+
+.score-bar-fill.male-score {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+}
+
+.score-bar-fill.female-score {
+    background: linear-gradient(90deg, #e91e63, #c2185b);
+}
+
+.score-value {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.indicators-used {
+    margin: 20px 0;
+}
+
+.indicators-used h5 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.indicators-list {
+    display: grid;
+    gap: 8px;
+}
+
+.indicator-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 6px;
+    align-items: center;
+}
+
+.indicator-name {
+    font-weight: 500;
+}
+
+.indicator-value {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.indicator-prediction {
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.indicator-prediction.male {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.indicator-prediction.female {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.indicator-prediction.uncertain {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.prediction-note {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.prediction-note p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #856404;
+    line-height: 1.5;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #007bff;
+    font-style: italic;
+}
+
+.error {
+    text-align: center;
+    padding: 20px;
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.warning {
+    text-align: center;
+    padding: 20px;
+    color: #856404;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.warning h4 {
+    margin-bottom: 10px;
+    color: #856404;
+}
+
+/* Responsive adjustments for sex prediction */
+@media (max-width: 768px) {
+    .sex-prediction-controls {
+        flex-direction: column;
+    }
+
+    .prediction-summary {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .score-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    .score-label {
+        min-width: auto;
+        text-align: center;
+    }
+
+    .indicator-item {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 5px;
+    }
+}
