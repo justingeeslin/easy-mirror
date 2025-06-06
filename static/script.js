@@ -825,7 +825,7 @@ class EasyMirror {
         // Add indicator details
         for (const [indicator, details] of Object.entries(data.indicator_details)) {
             const indicatorName = indicator.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const value = details.value;
+            let value = details.value;
             const prediction = details.prediction;
             const confidence = (details.confidence * 100).toFixed(0);
             
