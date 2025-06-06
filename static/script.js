@@ -8,6 +8,8 @@ class EasyMirror {
         this.clothingAvailable = false;
         this.currentClothing = {};
         this.availableClothing = {};
+        this.clothingAnalysisAvailable = false;
+        this.lastAnalysis = null;
         this.init();
     }
 
@@ -15,6 +17,7 @@ class EasyMirror {
         this.setupEventListeners();
         this.loadFilters();
         this.loadClothing();
+        this.checkClothingAnalysisAvailability();
         this.startStatusCheck();
         this.hideLoadingOverlay();
     }
@@ -308,6 +311,163 @@ class EasyMirror {
         }
     }
 
+    async checkClothingAnalysisAvailability() {
+        try {
+            const response = await fetch('/api/status');
+            const data = await response.json();
+            
+            if (data.clothing_analysis_available) {
+                this.clothingAnalysisAvailable = true;
+                this.renderClothingAnalysisPanel();
+            }
+        } catch (error) {
+            console.log('Clothing analysis not available:', error);
+            this.clothingAnalysisAvailable = false;
+        }
+    }
+
+    renderClothingAnalysisPanel() {
+        if (!this.clothingAnalysisAvailable) return;
+
+        // Create clothing analysis panel
+        let analysisPanel = document.getElementById('clothingAnalysisPanel');
+        if (!analysisPanel) {
+            analysisPanel = document.createElement('div');
+            analysisPanel.id = 'clothingAnalysisPanel';
+            analysisPanel.className = 'clothing-analysis-panel glass';
+            analysisPanel.innerHTML = `
+                <h3>🔍 Clothing Analysis</h3>
+                <p class="analysis-description">Analyze the clothing in the current frame using AI</p>
+                <button id="analyzeClothingBtn" class="analyze-clothing-btn">Analyze Clothing</button>
+                <div id="analysisResults" class="analysis-results" style="display: none;">
+                    <h4>Analysis Results:</h4>
+                    <div class="analysis-content"></div>
+                </div>
+            `;
+            
+            // Insert after clothing panel or filter grid
+            const clothingPanel = document.getElementById('clothingPanel');
+            const filterGrid = document.getElementById('filterGrid');
+            const insertAfter = clothingPanel || filterGrid;
+            insertAfter.parentNode.insertBefore(analysisPanel, insertAfter.nextSibling);
+            
+            // Add analyze button listener
+            document.getElementById('analyzeClothingBtn').addEventListener('click', () => {
+                this.analyzeClothing();
+            });
+        }
+    }
+
+    async analyzeClothing() {
+        if (!this.clothingAnalysisAvailable) {
+            this.showNotification('Clothing analysis not available', 'error');
+            return;
+        }
+
+        const analyzeBtn = document.getElementById('analyzeClothingBtn');
+        const originalText = analyzeBtn.textContent;
+        
+        try {
+            // Show loading state
+            analyzeBtn.textContent = 'Analyzing...';
+            analyzeBtn.disabled = true;
+            
+            const response = await fetch('/api/clothing/analyze', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.lastAnalysis = data.analysis;
+                this.displayAnalysisResults(data.analysis);
+                this.showNotification('Clothing analysis completed', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to analyze clothing');
+            }
+        } catch (error) {
+            console.error('Error analyzing clothing:', error);
+            this.showNotification('Error analyzing clothing: ' + error.message, 'error');
+        } finally {
+            // Reset button state
+            analyzeBtn.textContent = originalText;
+            analyzeBtn.disabled = false;
+        }
+    }
+
+    displayAnalysisResults(analysis) {
+        const resultsDiv = document.getElementById('analysisResults');
+        const contentDiv = resultsDiv.querySelector('.analysis-content');
+        
+        if (!analysis) {
+            contentDiv.innerHTML = '<p>No analysis data available</p>';
+            resultsDiv.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        
+        // Garment type
+        if (analysis.garment_type && analysis.garment_type !== 'unknown') {
+            html += `<div class="analysis-item">
+                <strong>Garment Type:</strong> ${analysis.garment_type}
+            </div>`;
+        }
+        
+        // Colors
+        if (analysis.colors && Object.keys(analysis.colors).length > 0) {
+            html += '<div class="analysis-item"><strong>Colors:</strong><ul>';
+            Object.entries(analysis.colors).forEach(([region, color]) => {
+                if (color !== 'unknown') {
+                    html += `<li>${region}: ${color}</li>`;
+                }
+            });
+            html += '</ul></div>';
+        }
+        
+        // Materials
+        if (analysis.materials && Object.keys(analysis.materials).length > 0) {
+            html += '<div class="analysis-item"><strong>Materials:</strong><ul>';
+            Object.entries(analysis.materials).forEach(([region, material]) => {
+                if (material !== 'unknown') {
+                    html += `<li>${region}: ${material}</li>`;
+                }
+            });
+            html += '</ul></div>';
+        }
+        
+        // Features
+        if (analysis.features && Object.keys(analysis.features).length > 0) {
+            html += '<div class="analysis-item"><strong>Features:</strong><ul>';
+            Object.entries(analysis.features).forEach(([feature, value]) => {
+                html += `<li>${feature}: ${value}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        // Embellishments
+        if (analysis.embellishments && analysis.embellishments.length > 0) {
+            html += `<div class="analysis-item">
+                <strong>Embellishments:</strong> ${analysis.embellishments.join(', ')}
+            </div>`;
+        }
+        
+        // Confidence
+        if (analysis.confidence !== undefined) {
+            const confidencePercent = Math.round(analysis.confidence * 100);
+            html += `<div class="analysis-item">
+                <strong>Confidence:</strong> ${confidencePercent}%
+            </div>`;
+        }
+        
+        if (html === '') {
+            html = '<p>No detailed analysis available</p>';
+        }
+        
+        contentDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
+    }
+
     async checkStatus() {
         try {
             const response = await fetch('/api/status');
@@ -327,6 +487,12 @@ class EasyMirror {
             // Update clothing availability
             if (data.clothing_available && !this.clothingAvailable) {
                 this.loadClothing();
+            }
+            
+            // Update clothing analysis availability
+            if (data.clothing_analysis_available && !this.clothingAnalysisAvailable) {
+                this.clothingAnalysisAvailable = true;
+                this.renderClothingAnalysisPanel();
             }
         } catch (error) {
             console.error('Error checking status:', error);

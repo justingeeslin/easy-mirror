@@ -28,6 +28,14 @@ except ImportError:
     CLOTHING_AVAILABLE = False
     logging.warning("Clothing overlay not available - install mediapipe to enable clothing filters")
 
+# Import clothing analysis system
+try:
+    from clothing_analysis import ClothingAnalyzer
+    CLOTHING_ANALYSIS_AVAILABLE = True
+except ImportError:
+    CLOTHING_ANALYSIS_AVAILABLE = False
+    logging.warning("Clothing analysis not available - install mediapipe to enable clothing analysis")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,6 +59,15 @@ class WebcamFilter:
                 logger.info("Clothing overlay system initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize clothing overlay: {e}")
+        
+        # Initialize clothing analysis system
+        self.clothing_analyzer = None
+        if CLOTHING_ANALYSIS_AVAILABLE:
+            try:
+                self.clothing_analyzer = ClothingAnalyzer()
+                logger.info("Clothing analysis system initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize clothing analyzer: {e}")
         
         # Available filters
         self.filters = {
@@ -299,7 +316,8 @@ def get_status():
         'camera_available': camera_available,
         'current_filter': webcam_filter.current_filter,
         'filters_count': len(webcam_filter.get_available_filters()),
-        'clothing_available': CLOTHING_AVAILABLE
+        'clothing_available': CLOTHING_AVAILABLE,
+        'clothing_analysis_available': CLOTHING_ANALYSIS_AVAILABLE
     })
 
 @app.route('/api/clothing', methods=['GET'])
@@ -343,6 +361,52 @@ def clear_clothing():
     return jsonify({
         'success': True,
         'current': webcam_filter.clothing_overlay.get_current_clothing()
+    })
+
+@app.route('/api/clothing/analyze', methods=['POST'])
+def analyze_clothing():
+    """Analyze the clothing in the current frame."""
+    if not webcam_filter.clothing_analyzer:
+        return jsonify({'error': 'Clothing analysis system not available'}), 400
+    
+    # Get current frame
+    frame = webcam_filter.get_frame()
+    if frame is None:
+        return jsonify({'error': 'No frame available'}), 400
+    
+    # Decode the JPEG frame back to OpenCV format
+    import numpy as np
+    nparr = np.frombuffer(frame, np.uint8)
+    cv_frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    if cv_frame is None:
+        return jsonify({'error': 'Failed to decode frame'}), 400
+    
+    # Perform clothing analysis
+    analysis = webcam_filter.clothing_analyzer.analyze_clothing(cv_frame)
+    
+    if analysis is None:
+        return jsonify({'error': 'Failed to analyze clothing - ensure person is visible in frame'}), 400
+    
+    return jsonify({
+        'success': True,
+        'analysis': analysis
+    })
+
+@app.route('/api/clothing/analysis', methods=['GET'])
+def get_clothing_analysis():
+    """Get the last clothing analysis result."""
+    if not webcam_filter.clothing_analyzer:
+        return jsonify({'error': 'Clothing analysis system not available'}), 400
+    
+    analysis = webcam_filter.clothing_analyzer.get_last_analysis()
+    
+    if analysis is None:
+        return jsonify({'error': 'No analysis available - run analysis first'}), 400
+    
+    return jsonify({
+        'success': True,
+        'analysis': analysis
     })
 
 @app.errorhandler(404)
