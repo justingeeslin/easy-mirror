@@ -7,6 +7,7 @@ A web-based webcam application with real-time computer vision filters, designed 
 - 📹 **Real-time webcam streaming** via web browser
 - 🎨 **11 CV filters**: None, Blur, Edge Detection, Grayscale, Sepia, Invert, Emboss, Cartoon, Vintage, Cool, Warm
 - 👕 **Virtual Clothing Filter**: Real-time clothing overlay using MediaPipe pose detection
+- 📏 **Anthropometric Measurements**: Calculate body measurements using MediaPipe landmarks (similar to ANSUR)
 - 🖥️ **Cross-platform**: Works on Ubuntu, Raspberry Pi, and other Linux systems
 - 📱 **Responsive design**: Works on desktop and mobile browsers
 - ⌨️ **Keyboard shortcuts**: Number keys (1-9) for quick filter switching, F for fullscreen
@@ -146,6 +147,9 @@ The application provides a REST API for integration:
 - `GET /api/clothing` - Get available clothing items
 - `POST /api/clothing/{category}/{item}` - Set clothing item
 - `POST /api/clothing/clear` - Clear all clothing
+- `GET /api/measurements` - Get anthropometric measurements from current frame
+- `GET /api/measurements/descriptions` - Get descriptions of available measurements
+- `POST /api/measurements/calibrate` - Set calibration for measurements
 
 ### Example API Usage
 
@@ -169,7 +173,61 @@ curl -X POST http://localhost:12000/api/clothing/shirts/blue_tshirt
 
 # Clear all clothing
 curl -X POST http://localhost:12000/api/clothing/clear
+
+# Get anthropometric measurements
+curl http://localhost:12000/api/measurements
+
+# Get measurement descriptions
+curl http://localhost:12000/api/measurements/descriptions
+
+# Set calibration (pixel-to-cm ratio)
+curl -X POST http://localhost:12000/api/measurements/calibrate \
+  -H "Content-Type: application/json" \
+  -d '{"pixel_to_cm_ratio": 0.15}'
 ```
+
+## Anthropometric Measurements
+
+The application can calculate various body measurements using MediaPipe pose detection, similar to those found in the ANSUR (Army Anthropometric Survey) database.
+
+### Available Measurements
+
+**Linear Measurements:**
+- Shoulder breadth (biacromial breadth)
+- Standing height (estimated)
+- Arm span (fingertip to fingertip)
+- Upper arm length (shoulder to elbow) - both sides
+- Forearm length (elbow to wrist) - both sides
+- Thigh length (hip to knee) - both sides
+- Lower leg length (knee to ankle) - both sides
+
+**Circumference Estimates:**
+- Chest circumference (based on shoulder breadth)
+- Waist circumference (based on hip width)
+- Head circumference (based on head width)
+
+### Using the Measurements Feature
+
+1. **Access the measurements panel**: Click the "📏 Measurements" button in the interface
+2. **Take a measurement**: Stand facing the camera with your full body visible and click "📐 Take Measurement"
+3. **Calibrate for accuracy**: Use the calibration feature with a known measurement for better accuracy
+
+### Calibration
+
+For accurate measurements, calibration is recommended:
+
+1. Take a measurement of a known body dimension (e.g., measure your shoulder breadth with a tape measure)
+2. Click "⚙️ Calibrate" in the measurements panel
+3. Enter your known measurement and select the corresponding measurement type
+4. Click "Set Calibration" to update the pixel-to-cm ratio
+
+### Measurement Tips
+
+- Stand facing the camera with good lighting
+- Keep your full body visible in the frame
+- Stand in a neutral pose with arms slightly away from your body
+- Ensure the camera is at a reasonable distance (2-3 meters recommended)
+- Use calibration for the most accurate results
 
 ## Configuration
 
