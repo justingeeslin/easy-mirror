@@ -1,11 +1,17 @@
-# Virtual Clothing Filter
+# Clothing System
 
 ## Overview
 
-The Virtual Clothing Filter is an advanced computer vision feature that uses MediaPipe pose detection to overlay virtual clothing items onto the user's body in real-time. This feature supports multiple clothing categories including shirts, hats, and accessories.
+The Clothing System includes two main features:
+
+1. **Virtual Clothing Filter**: Uses MediaPipe pose detection to overlay virtual clothing items onto the user's body in real-time
+2. **Clothing Analysis**: Uses MediaPipe Image Segmentation to detect and analyze real clothing worn by the user
+
+Both features support multiple clothing categories and provide detailed information about garments.
 
 ## Features
 
+### Virtual Clothing Filter
 - **Real-time Pose Detection**: Uses MediaPipe to detect body landmarks and position clothing accurately
 - **Multiple Clothing Categories**: 
   - Shirts (Blue, Green, Red, Yellow T-Shirts)
@@ -14,6 +20,15 @@ The Virtual Clothing Filter is an advanced computer vision feature that uses Med
 - **Dynamic Positioning**: Clothing items automatically adjust to body pose and movement
 - **Easy Management**: Simple web interface for selecting and clearing clothing items
 - **Configurable**: JSON-based configuration for easy addition of new clothing items
+
+### Clothing Analysis
+- **Real-time Analysis**: Analyze clothing in the current video frame
+- **Garment Type Detection**: Identifies shirts, dresses, blouses, pants, shorts, skirts, etc.
+- **Color Recognition**: Detects dominant colors in different body regions
+- **Material Analysis**: Estimates fabric types (cotton, denim, silk, wool, etc.)
+- **Feature Detection**: Identifies neckline types, sleeve lengths, and other garment features
+- **Embellishment Recognition**: Detects buttons, zippers, and other clothing details
+- **Confidence Scoring**: Provides confidence levels for analysis results
 
 ## Technical Implementation
 
@@ -24,50 +39,92 @@ The Virtual Clothing Filter is an advanced computer vision feature that uses Med
    - Manages clothing item positioning and scaling
    - Applies clothing overlays to video frames
 
-2. **Clothing Configuration** (`clothing_config.json`)
+2. **ClothingAnalyzer Class** (`clothing_analysis.py`)
+   - Handles MediaPipe Image Segmentation
+   - Analyzes real clothing in video frames
+   - Provides detailed garment information
+
+3. **Clothing Configuration** (`clothing_config.json`)
    - Defines available clothing items
    - Specifies positioning parameters for each item
    - Configures scaling and offset values
 
-3. **Web Interface Integration**
-   - API endpoints for clothing management
+4. **Web Interface Integration**
+   - API endpoints for clothing management and analysis
    - Real-time UI updates
    - Category-based clothing selection
+   - Interactive analysis results display
 
-### Pose Detection
+### Pose Detection & Image Segmentation
 
-The system uses MediaPipe Pose to detect 33 body landmarks:
-- **Shoulders**: Used for shirt positioning and scaling
-- **Head**: Used for hat and accessory placement
-- **Body center**: Used for overall clothing alignment
+The system uses two MediaPipe models:
+
+1. **MediaPipe Pose** (for virtual clothing overlay):
+   - Detects 33 body landmarks
+   - **Shoulders**: Used for shirt positioning and scaling
+   - **Head**: Used for hat and accessory placement
+   - **Body center**: Used for overall clothing alignment
+
+2. **MediaPipe Selfie Segmentation** (for clothing analysis):
+   - Segments person from background
+   - Identifies clothing regions on the body
+   - Enables detailed analysis of real garments
 
 ### Clothing Positioning
 
-Each clothing item is positioned based on specific body landmarks:
+Each virtual clothing item is positioned based on specific body landmarks:
 
 - **Shirts**: Positioned between shoulders with dynamic width scaling
 - **Hats**: Centered on head with appropriate offset
 - **Accessories**: Positioned on face landmarks (e.g., glasses on nose)
 
+### Clothing Analysis Process
+
+The analysis system follows these steps:
+
+1. **Person Segmentation**: Isolate the person from the background
+2. **Body Region Detection**: Define torso, arms, and legs based on pose landmarks
+3. **Color Analysis**: Analyze dominant colors in each body region
+4. **Texture Analysis**: Estimate material types based on texture patterns
+5. **Garment Classification**: Identify garment types based on coverage patterns
+6. **Feature Detection**: Analyze necklines, sleeve lengths, and other features
+7. **Embellishment Detection**: Look for buttons, zippers, and other details
+
 ## API Endpoints
 
-### Get Available Clothing
+### Virtual Clothing Management
+
+#### Get Available Clothing
 ```
 GET /api/clothing
 ```
 Returns all available clothing items organized by category.
 
-### Set Clothing Item
+#### Set Clothing Item
 ```
 POST /api/clothing/{category}/{item_id}
 ```
 Sets a specific clothing item for the given category.
 
-### Clear All Clothing
+#### Clear All Clothing
 ```
 POST /api/clothing/clear
 ```
 Removes all currently applied clothing items.
+
+### Clothing Analysis
+
+#### Analyze Current Frame
+```
+POST /api/clothing/analyze
+```
+Analyzes the clothing in the current video frame and returns detailed information.
+
+#### Get Last Analysis
+```
+GET /api/clothing/analysis
+```
+Returns the most recent clothing analysis results.
 
 ## Configuration
 
