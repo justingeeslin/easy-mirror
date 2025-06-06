@@ -291,6 +291,18 @@ easy-mirror/
 └── CLOTHING_FILTER.md       # Clothing filter documentation
 ```
 
+### Running Clothing Analysis on Test Images
+
+Use `analyze_images.py` to process still images through the clothing detection
+pipeline. Provide image files or directories and the script outputs a JSON
+summary for each image.
+
+```bash
+python analyze_images.py test_images/ -o results.json
+```
+
+This is handy for verifying detection results without launching the web app.
+
 ## Contributing
 
 1. Fork the repository
