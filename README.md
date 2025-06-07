@@ -8,6 +8,8 @@ A web-based webcam application with real-time computer vision filters, designed 
 - 🎨 **11 CV filters**: None, Blur, Edge Detection, Grayscale, Sepia, Invert, Emboss, Cartoon, Vintage, Cool, Warm
 - 👕 **Virtual Clothing Filter**: Real-time clothing overlay using MediaPipe pose detection
 - 📏 **Anthropometric Measurements**: Calculate body measurements using MediaPipe landmarks (similar to ANSUR)
+- 🧬 **Biological Sex Prediction**: Predict biological sex based on anthropometric measurements
+- 🏗️ **Modular Architecture**: Clean separation of concerns with explicit dependencies
 - 🖥️ **Cross-platform**: Works on Ubuntu, Raspberry Pi, and other Linux systems
 - 📱 **Responsive design**: Works on desktop and mobile browsers
 - ⌨️ **Keyboard shortcuts**: Number keys (1-9) for quick filter switching, F for fullscreen
@@ -86,6 +88,20 @@ docker build -t easy-mirror .
 docker run -p 12000:12000 --device=/dev/video0 easy-mirror
 ```
 
+## Architecture
+
+Easy Mirror features a **modular architecture** with clear separation of concerns:
+
+- **Base Module**: Camera management and core functionality
+- **Anthropometric Module**: Body measurement calculations using MediaPipe
+- **Prediction Module**: Biological sex prediction (depends on anthropometric measurements)
+- **Filters Module**: Image processing filters and clothing overlays
+
+### Dependency Relationship
+The **biological sex prediction module explicitly depends on the anthropometric measurements module**, ensuring proper data flow and maintaining scientific accuracy.
+
+For detailed architecture information, see [MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md).
+
 ## Usage
 
 ### Starting the Application
@@ -94,7 +110,10 @@ docker run -p 12000:12000 --device=/dev/video0 easy-mirror
 # Activate virtual environment
 source venv/bin/activate
 
-# Run the application
+# Run the modular application (recommended)
+python app_modular.py
+
+# Or run the original application
 python app.py
 ```
 
