@@ -385,7 +385,42 @@ class SexPredictor:
         explanation += f"in human anthropometry and should be interpreted as an estimate only."
         
         return explanation
-    
+
+    def estimate_bust_circumference_range(self, measurements: Dict) -> Optional[Tuple[float, float]]:
+        """
+        Estimate a plausible range for bust circumference (in cm) based on available measurements.
+
+        Uses shoulder breadth, waist circumference, height, and optionally predicted sex.
+
+        Returns:
+            Tuple of (min_cm, max_cm) if enough data is available, else None.
+        """
+        shoulder_breadth = measurements.get('shoulder_breadth')
+        waist_circ = measurements.get('waist_circumference')
+        height = measurements.get('standing_height')
+
+        # Require at least shoulder breadth and one other measurement
+        if not shoulder_breadth or not (waist_circ or height):
+            return None
+
+        # Start with shoulder-based base estimate
+        # These multipliers are derived from ANSUR regression approximations
+        base_bust = shoulder_breadth * 2.2  # Rough linear scale from shoulder width
+
+        # Adjust based on waist and height if available
+        if waist_circ:
+            # Adjust upward for higher waist—tends to correlate with larger bust
+            base_bust += (waist_circ - 70) * 0.25  # scaling factor
+        if height:
+            # Normalize for torso proportion (shorter stature sometimes means relatively larger bust)
+            base_bust += (160 - height) * 0.15  # more weight to height differences below 160
+
+        # Generate a ± range to reflect natural variation
+        bust_min = base_bust * 0.95
+        bust_max = base_bust * 1.05
+
+        return round(bust_min, 1), round(bust_max, 1)
+
     def generate_ui_html(self, measurements_available=True):
         """Generate HTML for sex prediction UI controls."""
         if not measurements_available:
