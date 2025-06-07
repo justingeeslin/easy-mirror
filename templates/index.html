@@ -45,8 +45,69 @@
                     <button id="fullscreenBtn" class="btn btn-secondary">
                         🔍 Fullscreen
                     </button>
-                    
-                    
+                    <button id="measurementsBtn" class="btn btn-secondary">
+                        📏 Measurements
+                    </button>
+                    <button id="sexPredictionBtn" class="btn btn-secondary">
+                        🧬 Sex Prediction
+                    </button>
+                </div>
+                
+                <!-- Measurements Panel -->
+                <div id="measurementsPanel" class="measurements-panel" style="display: none;">
+                    <h3>📏 Anthropometric Measurements</h3>
+                    <div class="measurements-controls">
+                        <button id="takeMeasurementBtn" class="btn btn-primary">
+                            📐 Take Measurement
+                        </button>
+                        <button id="calibrateBtn" class="btn btn-secondary">
+                            ⚙️ Calibrate
+                        </button>
+                    </div>
+                    <div id="measurementsResults" class="measurements-results">
+                        <p class="measurements-info">Click "Take Measurement" to analyze your pose and calculate body measurements.</p>
+                    </div>
+                    <div id="calibrationPanel" class="calibration-panel" style="display: none;">
+                        <h4>Calibration</h4>
+                        <p>Enter a known measurement to calibrate the system:</p>
+                        <div class="calibration-input">
+                            <label for="knownMeasurement">Known measurement (cm):</label>
+                            <input type="number" id="knownMeasurement" step="0.1" placeholder="e.g., 40.0">
+                            <select id="measurementType">
+                                <option value="shoulder_breadth">Shoulder Breadth</option>
+                                <option value="standing_height">Standing Height</option>
+                                <option value="arm_span">Arm Span</option>
+                            </select>
+                            <button id="setCalibrateBtn" class="btn btn-primary">Set Calibration</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sex Prediction Panel -->
+                <div id="sexPredictionPanel" class="sex-prediction-panel" style="display: none;">
+                    <h3>🧬 Biological Sex Prediction</h3>
+                    <div class="sex-prediction-controls">
+                        <button id="predictSexBtn" class="btn btn-primary">
+                            🔬 Analyze Current Pose
+                        </button>
+                        <button id="showMethodologyBtn" class="btn btn-secondary">
+                            📖 Methodology
+                        </button>
+                    </div>
+                    <div id="sexPredictionResults" class="sex-prediction-results">
+                        <p class="sex-prediction-info">Click "Analyze Current Pose" to predict biological sex based on anthropometric measurements.</p>
+                    </div>
+                    <div id="methodologyPanel" class="methodology-panel" style="display: none;">
+                        <h4>Methodology</h4>
+                        <p>This system uses established patterns of sexual dimorphism in human body measurements:</p>
+                        <ul>
+                            <li><strong>Shoulder-to-hip ratio:</strong> Males typically have broader shoulders relative to hips</li>
+                            <li><strong>Height and limb proportions:</strong> Males often have longer limbs relative to height</li>
+                            <li><strong>Head circumference:</strong> Males typically have larger head circumference</li>
+                            <li><strong>Arm span to height ratio:</strong> Males often have longer arm spans relative to height</li>
+                        </ul>
+                        <p><em>Note: This is for educational/research purposes. Individual variation exists and predictions should be interpreted as estimates only.</em></p>
+                    </div>
                 </div>
                 
                 <footer>

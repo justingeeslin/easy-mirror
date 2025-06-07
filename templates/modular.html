@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Mirror - Modular Interface</title>
+    
+    <!-- Base styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .video-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        #video-stream {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .controls-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .module-info {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .module-info h3 {
+            margin-bottom: 10px;
+            color: #1a365d;
+        }
+        
+        .module-list {
+            list-style: none;
+        }
+        
+        .module-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .module-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .module-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .module-status.available {
+            background: #48bb78;
+        }
+        
+        .module-status.unavailable {
+            background: #f56565;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls-section {
+                max-height: none;
+            }
+        }
+    </style>
+    
+    <!-- Dynamic module CSS -->
+    <link rel="stylesheet" href="/api/ui/css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🪞 Easy Mirror</h1>
+            <p>Modular Computer Vision Interface</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img id="video-stream" src="/video_feed" alt="Video Stream">
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div id="module-info" class="module-info">
+                    <h3>📦 Available Modules</h3>
+                    <ul id="module-list" class="module-list">
+                        <li class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>Loading modules...</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div id="modular-controls-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading interface...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dynamic module JavaScript -->
+    <script src="/api/ui/js"></script>
+    
+    <script>
+        // Load modular interface
+        async function loadModularInterface() {
+            try {
+                // Load module information
+                const moduleResponse = await fetch('/api/ui/modules');
+                const moduleInfo = await moduleResponse.json();
+                
+                // Update module list
+                const moduleList = document.getElementById('module-list');
+                if (moduleInfo.error) {
+                    moduleList.innerHTML = `<li class="error">Error: ${moduleInfo.error}</li>`;
+                } else {
+                    const modules = Object.values(moduleInfo);
+                    if (modules.length === 0) {
+                        moduleList.innerHTML = '<li>No modules available</li>';
+                    } else {
+                        moduleList.innerHTML = modules.map(module => {
+                            const status = module.dependencies_met ? 'available' : 'unavailable';
+                            const statusText = module.dependencies_met ? 'Available' : 'Dependencies missing';
+                            return `
+                                <li>
+                                    <span class="module-status ${status}" title="${statusText}"></span>
+                                    ${module.name} (${module.class})
+                                </li>
+                            `;
+                        }).join('');
+                    }
+                }
+                
+                // Load modular controls HTML
+                const htmlResponse = await fetch('/api/ui/html');
+                const html = await htmlResponse.text();
+                
+                const container = document.getElementById('modular-controls-container');
+                container.innerHTML = html;
+                
+                console.log('Modular interface loaded successfully');
+                
+            } catch (error) {
+                console.error('Error loading modular interface:', error);
+                const container = document.getElementById('modular-controls-container');
+                container.innerHTML = `
+                    <div class="error">
+                        <h3>Error Loading Interface</h3>
+                        <p>Failed to load modular interface: ${error.message}</p>
+                        <p>Please check the console for more details.</p>
+                    </div>
+                `;
+                
+                const moduleList = document.getElementById('module-list');
+                moduleList.innerHTML = '<li class="error">Failed to load module information</li>';
+            }
+        }
+        
+        // Load interface when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadModularInterface);
+        } else {
+            loadModularInterface();
+        }
+        
+        // Refresh video stream if it fails to load
+        const videoStream = document.getElementById('video-stream');
+        videoStream.onerror = function() {
+            console.log('Video stream error, attempting to reload...');
+            setTimeout(() => {
+                this.src = '/video_feed?' + new Date().getTime();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
