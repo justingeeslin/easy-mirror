@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Easy Mirror
+Comment=Web-based webcam application with real-time computer vision filters
+Exec=/usr/local/bin/easy-mirror-launcher
+Icon=/usr/local/share/easy-mirror/icon.png
+Terminal=false
+Categories=AudioVideo;Photography;
+StartupNotify=true
+Keywords=webcam;camera;mirror;filters;opencv;

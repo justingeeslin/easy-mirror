@@ -30,6 +30,30 @@ The application provides a clean, modern interface with:
 - USB webcam
 - Modern web browser
 
+### Raspberry Pi Desktop App (Recommended for Pi users)
+
+For Raspberry Pi users who want Easy Mirror as a desktop application that can be launched from the Applications menu and run in fullscreen mode:
+
+```bash
+# Clone the repository
+git clone https://github.com/justingeeslin/easy-mirror.git
+cd easy-mirror
+
+# Run the automated installer
+chmod +x install-rpi-app.sh
+sudo ./install-rpi-app.sh
+```
+
+This will:
+- Install all dependencies
+- Create a desktop application entry
+- Set up fullscreen/kiosk mode
+- Optionally configure autostart
+
+See [RPI_APP_SETUP.md](RPI_APP_SETUP.md) for detailed instructions.
+
+### Manual Installation
+
 ### Ubuntu/Debian Installation
 
 ```bash
