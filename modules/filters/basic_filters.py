@@ -151,7 +151,7 @@ class BasicFilters:
     def generate_ui_html(self, current_filter='none'):
         """Generate HTML for basic filters UI controls."""
         html = '''
-        <div class="module-section" id="basic-filters-section">
+        <div class="module-section glass" id="basic-filters-section">
             <h3>🎨 Basic Filters</h3>
             <div class="filter-grid">
         '''

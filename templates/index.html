@@ -15,7 +15,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: black;
             min-height: 100vh;
             color: #333;
         }
@@ -29,7 +29,7 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            color: white;
+            color: black;
         }
         
         .header h1 {
@@ -51,17 +51,17 @@
         }
         
         .video-section {
-            background: white;
+            background: black;
             border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: fixed;
+            top:0;
+            left:0;
+            width:100vw;
+            z-index: -3;
         }
         
         .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+
         }
         
         #video-stream {
@@ -72,12 +72,16 @@
         }
         
         .controls-section {
-            background: white;
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-height: 80vh;
             overflow-y: auto;
+        }
+
+        .glass {
+            background-color: rgba(0,0,0, 0.2); /* semi-transparent white */
+            backdrop-filter: blur(10px);               /* blur background behind */
+            -webkit-backdrop-filter: blur(10px);       /* Safari support */
         }
         
         .loading {
@@ -169,21 +173,17 @@
     <link rel="stylesheet" href="/api/ui/css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🪞 Easy Mirror</h1>
-            <p>Modular Computer Vision Interface</p>
+    <div class="video-section">
+        <div class="video-container">
+            <img id="video-stream" src="/video_feed" alt="Video Stream">
         </div>
-        
+    </div>
+
+    <div class="container">
         <div class="main-content">
-            <div class="video-section">
-                <div class="video-container">
-                    <img id="video-stream" src="/video_feed" alt="Video Stream">
-                </div>
-            </div>
-            
+            <div><!-- Let the video show through --></div>
             <div class="controls-section">
-                <div id="module-info" class="module-info">
+                <div id="module-info" class="module-info" style="display:none;">
                     <h3>📦 Available Modules</h3>
                     <ul id="module-list" class="module-list">
                         <li class="loading">

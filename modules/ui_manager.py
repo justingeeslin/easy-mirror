@@ -92,9 +92,7 @@ class UIManager:
         .module-section {
             margin-bottom: 30px;
             padding: 20px;
-            border: 1px solid #ddd;
             border-radius: 12px;
-            background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         

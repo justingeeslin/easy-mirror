@@ -324,9 +324,7 @@ class ClothingOverlay:
         .clothing-category {
             margin-top: 20px;
             padding: 15px;
-            border: 1px solid #ddd;
             border-radius: 8px;
-            background: #f8f9fa;
         }
         
         .clothing-category h4 {
