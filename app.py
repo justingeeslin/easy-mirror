@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Easy Mirror - Web-based Webcam with CV Filters
+Easy Mirror - Modular Web-based Webcam with CV Filters
 A Flask application that streams webcam video with real-time computer vision filters.
+Uses modular architecture for better maintainability and extensibility.
 """
 
 import cv2
@@ -13,36 +14,43 @@ import time
 import logging
 import os
 
-# Import demo mode for testing
+# Import modular components
 try:
-    from demo_mode import DemoCamera
-    DEMO_AVAILABLE = True
+    from modules.base import CameraManager
+    CAMERA_AVAILABLE = True
 except ImportError:
-    DEMO_AVAILABLE = False
+    CAMERA_AVAILABLE = False
+    logging.warning("Camera management module not available")
 
-# Import clothing overlay system
 try:
-    from clothing_overlay import ClothingOverlay
+    from modules.filters import BasicFilters, ClothingOverlay
+    FILTERS_AVAILABLE = True
     CLOTHING_AVAILABLE = True
 except ImportError:
+    FILTERS_AVAILABLE = False
     CLOTHING_AVAILABLE = False
-    logging.warning("Clothing overlay not available - install mediapipe to enable clothing filters")
+    logging.warning("Filters modules not available")
 
-# Import anthropometric measurements system
 try:
-    from anthropometric_measurements import AnthropometricMeasurements
+    from modules.anthropometric import AnthropometricMeasurements
     MEASUREMENTS_AVAILABLE = True
 except ImportError:
     MEASUREMENTS_AVAILABLE = False
-    logging.warning("Anthropometric measurements not available - install mediapipe to enable measurements")
+    logging.warning("Anthropometric measurements module not available - install mediapipe to enable measurements")
 
-# Import sex prediction system
 try:
-    from sex_prediction import SexPredictor
+    from modules.prediction import SexPredictor
     SEX_PREDICTION_AVAILABLE = True
 except ImportError:
     SEX_PREDICTION_AVAILABLE = False
-    logging.warning("Sex prediction not available")
+    logging.warning("Sex prediction module not available")
+
+try:
+    from modules.ui_manager import UIManager
+    UI_MANAGER_AVAILABLE = True
+except ImportError:
+    UI_MANAGER_AVAILABLE = False
+    logging.warning("UI manager not available")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,13 +59,39 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-class WebcamFilter:
+
+class ModularWebcamFilter:
+    """Modular webcam filter system using separate modules for different capabilities."""
+    
     def __init__(self):
-        self.camera = None
         self.current_filter = 'none'
+        
+        # Initialize UI manager
+        if UI_MANAGER_AVAILABLE:
+            self.ui_manager = UIManager()
+        else:
+            self.ui_manager = None
         self.is_running = False
         self.frame_lock = threading.Lock()
         self.latest_frame = None
+        
+        # Initialize camera manager
+        self.camera_manager = None
+        if CAMERA_AVAILABLE:
+            try:
+                self.camera_manager = CameraManager()
+                logger.info("Camera manager initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize camera manager: {e}")
+        
+        # Initialize basic filters
+        self.basic_filters = None
+        if FILTERS_AVAILABLE:
+            try:
+                self.basic_filters = BasicFilters()
+                logger.info("Basic filters initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize basic filters: {e}")
         
         # Initialize clothing overlay system
         self.clothing_overlay = None
@@ -77,185 +111,52 @@ class WebcamFilter:
             except Exception as e:
                 logger.error(f"Failed to initialize anthropometric measurements: {e}")
         
-        # Initialize sex prediction system
+        # Initialize sex prediction system (depends on anthropometric measurements)
         self.sex_predictor = None
-        if SEX_PREDICTION_AVAILABLE:
+        if SEX_PREDICTION_AVAILABLE and MEASUREMENTS_AVAILABLE:
             try:
                 self.sex_predictor = SexPredictor()
                 logger.info("Sex prediction system initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize sex prediction: {e}")
+        elif SEX_PREDICTION_AVAILABLE and not MEASUREMENTS_AVAILABLE:
+            logger.warning("Sex prediction available but anthropometric measurements not available - sex prediction disabled")
         
-        # Available filters
-        self.filters = {
-            'none': self.no_filter,
-            'blur': self.blur_filter,
-            'edge': self.edge_filter,
-            'grayscale': self.grayscale_filter,
-            'sepia': self.sepia_filter,
-            'invert': self.invert_filter,
-            'emboss': self.emboss_filter,
-            'cartoon': self.cartoon_filter,
-            'vintage': self.vintage_filter,
-            'cool': self.cool_filter,
-            'warm': self.warm_filter,
-            'clothing': self.clothing_filter
-        }
+        # Register modules with UI manager
+        if self.ui_manager:
+            if self.basic_filters:
+                self.ui_manager.register_module('basic_filters', self.basic_filters)
+            if self.clothing_overlay:
+                self.ui_manager.register_module('clothing', self.clothing_overlay)
+            if self.anthropometric_measurements:
+                self.ui_manager.register_module('anthropometric', self.anthropometric_measurements)
+            if self.sex_predictor:
+                self.ui_manager.register_module('sex_prediction', self.sex_predictor, dependencies=['anthropometric'])
+            
+            logger.info(f"Registered {len(self.ui_manager.get_available_modules())} modules with UI manager")
         
-        self.initialize_camera()
-    
-    def initialize_camera(self):
-        """Initialize the camera with fallback options for different systems."""
-        # Check if demo mode is requested
-        if os.environ.get('DEMO_MODE', '').lower() in ['true', '1', 'yes']:
-            if DEMO_AVAILABLE:
-                self.camera = DemoCamera()
-                logger.info("Demo mode activated - using simulated camera")
-                return
-            else:
-                logger.warning("Demo mode requested but demo_mode.py not available")
-        
-        camera_indices = [0, 1, 2, -1]  # Try different camera indices
-        
-        for idx in camera_indices:
-            try:
-                self.camera = cv2.VideoCapture(idx)
-                if self.camera.isOpened():
-                    # Set camera properties for better performance
-                    self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                    self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                    self.camera.set(cv2.CAP_PROP_FPS, 30)
-                    
-                    # Test if we can read a frame
-                    ret, frame = self.camera.read()
-                    if ret:
-                        logger.info(f"Camera initialized successfully on index {idx}")
-                        return
-                    else:
-                        self.camera.release()
-            except Exception as e:
-                logger.warning(f"Failed to initialize camera on index {idx}: {e}")
-                continue
-        
-        # If no real camera found, try demo mode as fallback
-        if DEMO_AVAILABLE:
-            logger.info("No real camera found, falling back to demo mode")
-            self.camera = DemoCamera()
-            return
-        
-        logger.error("Could not initialize any camera and demo mode not available")
-        self.camera = None
-    
-    def no_filter(self, frame):
-        """No filter applied."""
-        return frame
-    
-    def blur_filter(self, frame):
-        """Apply Gaussian blur."""
-        return cv2.GaussianBlur(frame, (15, 15), 0)
-    
-    def edge_filter(self, frame):
-        """Apply edge detection."""
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 50, 150)
-        return cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    
-    def grayscale_filter(self, frame):
-        """Convert to grayscale."""
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-    
-    def sepia_filter(self, frame):
-        """Apply sepia tone effect."""
-        sepia_kernel = np.array([[0.272, 0.534, 0.131],
-                                [0.349, 0.686, 0.168],
-                                [0.393, 0.769, 0.189]])
-        return cv2.transform(frame, sepia_kernel)
-    
-    def invert_filter(self, frame):
-        """Invert colors."""
-        return cv2.bitwise_not(frame)
-    
-    def emboss_filter(self, frame):
-        """Apply emboss effect."""
-        kernel = np.array([[-2, -1, 0],
-                          [-1, 1, 1],
-                          [0, 1, 2]])
-        return cv2.filter2D(frame, -1, kernel)
-    
-    def cartoon_filter(self, frame):
-        """Apply cartoon effect."""
-        # Reduce colors
-        data = np.float32(frame).reshape((-1, 3))
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-        _, labels, centers = cv2.kmeans(data, 8, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
-        centers = np.uint8(centers)
-        segmented_data = centers[labels.flatten()]
-        segmented_image = segmented_data.reshape(frame.shape)
-        
-        # Create edge mask
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray_blur = cv2.medianBlur(gray, 5)
-        edges = cv2.adaptiveThreshold(gray_blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 9)
-        edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-        
-        # Combine
-        cartoon = cv2.bitwise_and(segmented_image, edges)
-        return cartoon
-    
-    def vintage_filter(self, frame):
-        """Apply vintage effect."""
-        # Add noise
-        noise = np.random.randint(0, 50, frame.shape, dtype=np.uint8)
-        vintage = cv2.add(frame, noise)
-        
-        # Apply sepia-like color transformation
-        vintage = cv2.addWeighted(vintage, 0.8, self.sepia_filter(vintage), 0.2, 0)
-        
-        # Reduce brightness slightly
-        vintage = cv2.convertScaleAbs(vintage, alpha=0.9, beta=-10)
-        
-        return vintage
-    
-    def cool_filter(self, frame):
-        """Apply cool color temperature."""
-        # Increase blue channel, decrease red
-        frame_cool = frame.copy()
-        frame_cool[:, :, 0] = np.clip(frame_cool[:, :, 0] * 1.2, 0, 255)  # Blue
-        frame_cool[:, :, 2] = np.clip(frame_cool[:, :, 2] * 0.8, 0, 255)  # Red
-        return frame_cool
-    
-    def warm_filter(self, frame):
-        """Apply warm color temperature."""
-        # Increase red channel, decrease blue
-        frame_warm = frame.copy()
-        frame_warm[:, :, 0] = np.clip(frame_warm[:, :, 0] * 0.8, 0, 255)  # Blue
-        frame_warm[:, :, 2] = np.clip(frame_warm[:, :, 2] * 1.2, 0, 255)  # Red
-        return frame_warm
-    
-    def clothing_filter(self, frame):
-        """Apply clothing overlay filter."""
-        if self.clothing_overlay:f
-            return self.clothing_overlay.apply_clothing_filter(frame)
-        return frame
+        # Build available filters list
+        self.available_filters = ['none']
+        if self.basic_filters:
+            self.available_filters.extend(self.basic_filters.get_available_filters())
+        if self.clothing_overlay:
+            self.available_filters.append('clothing')
     
     def get_frame(self):
         """Capture and process a frame."""
-        if not self.camera or not self.camera.isOpened():
+        if not self.camera_manager or not self.camera_manager.is_available():
             return None
         
-        ret, frame = self.camera.read()
+        ret, frame = self.camera_manager.read_frame()
         if not ret:
             return None
         
         # Apply current filter
-        if self.current_filter in self.filters:
-            try:
-                frame = self.filters[self.current_filter](frame)
-            except Exception as e:
-                logger.error(f"Error applying filter {self.current_filter}: {e}")
-                # Fall back to no filter
-                frame = self.no_filter(frame)
+        try:
+            frame = self.apply_current_filter(frame)
+        except Exception as e:
+            logger.error(f"Error applying filter {self.current_filter}: {e}")
+            # Fall back to no filter
         
         # Encode frame as JPEG
         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
@@ -263,9 +164,21 @@ class WebcamFilter:
             return buffer.tobytes()
         return None
     
+    def apply_current_filter(self, frame):
+        """Apply the current filter to the frame."""
+        if self.current_filter == 'none':
+            return frame
+        elif self.current_filter == 'clothing' and self.clothing_overlay:
+            return self.clothing_overlay.apply_clothing_filter(frame)
+        elif self.basic_filters and self.current_filter in self.basic_filters.get_available_filters():
+            return self.basic_filters.apply_filter(frame, self.current_filter)
+        else:
+            logger.warning(f"Unknown filter: {self.current_filter}")
+            return frame
+    
     def set_filter(self, filter_name):
         """Set the current filter."""
-        if filter_name in self.filters:
+        if filter_name in self.available_filters:
             self.current_filter = filter_name
             logger.info(f"Filter changed to: {filter_name}")
             return True
@@ -273,20 +186,53 @@ class WebcamFilter:
     
     def get_available_filters(self):
         """Get list of available filters."""
-        return list(self.filters.keys())
+        return self.available_filters
     
     def cleanup(self):
-        """Clean up camera resources."""
-        if self.camera:
-            self.camera.release()
+        """Clean up resources."""
+        if self.camera_manager:
+            self.camera_manager.cleanup()
+
 
 # Global webcam filter instance
-webcam_filter = WebcamFilter()
+webcam_filter = ModularWebcamFilter()
+
 
 @app.route('/')
 def index():
     """Serve the main page."""
     return render_template('index.html')
+
+@app.route('/api/ui/html')
+def get_modular_html():
+    """Get combined HTML from all modules."""
+    if webcam_filter.ui_manager:
+        return webcam_filter.ui_manager.generate_combined_html()
+    return '<div>UI Manager not available</div>'
+
+@app.route('/api/ui/css')
+def get_modular_css():
+    """Get combined CSS from all modules."""
+    if webcam_filter.ui_manager:
+        css = webcam_filter.ui_manager.generate_combined_css()
+        return Response(css, mimetype='text/css')
+    return Response('/* UI Manager not available */', mimetype='text/css')
+
+@app.route('/api/ui/js')
+def get_modular_js():
+    """Get combined JavaScript from all modules."""
+    if webcam_filter.ui_manager:
+        js = webcam_filter.ui_manager.generate_combined_javascript()
+        return Response(js, mimetype='application/javascript')
+    return Response('// UI Manager not available', mimetype='application/javascript')
+
+@app.route('/api/ui/modules')
+def get_module_info():
+    """Get information about available modules."""
+    if webcam_filter.ui_manager:
+        return jsonify(webcam_filter.ui_manager.get_module_info())
+    return jsonify({'error': 'UI Manager not available'})
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -304,6 +250,7 @@ def video_feed():
     return Response(generate(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 @app.route('/api/filters', methods=['GET'])
 def get_filters():
     """Get available filters."""
@@ -312,7 +259,8 @@ def get_filters():
         'current': webcam_filter.current_filter
     })
 
-@app.route('/api/filter', methods=['POST'])
+
+@app.route('/set_filter', methods=['POST'])
 def set_filter():
     """Set the current filter."""
     data = request.get_json()
@@ -325,17 +273,25 @@ def set_filter():
     else:
         return jsonify({'error': 'Invalid filter name'}), 400
 
+
 @app.route('/api/status')
 def get_status():
     """Get camera and application status."""
-    camera_available = webcam_filter.camera is not None and webcam_filter.camera.isOpened()
+    camera_available = (webcam_filter.camera_manager is not None and 
+                       webcam_filter.camera_manager.is_available())
     return jsonify({
         'camera_available': camera_available,
         'current_filter': webcam_filter.current_filter,
         'filters_count': len(webcam_filter.get_available_filters()),
-        'clothing_available': CLOTHING_AVAILABLE,
-        'measurements_available': MEASUREMENTS_AVAILABLE
+        'modules': {
+            'camera': CAMERA_AVAILABLE,
+            'basic_filters': FILTERS_AVAILABLE,
+            'clothing': CLOTHING_AVAILABLE,
+            'measurements': MEASUREMENTS_AVAILABLE,
+            'sex_prediction': SEX_PREDICTION_AVAILABLE
+        }
     })
+
 
 @app.route('/api/clothing', methods=['GET'])
 def get_clothing():
@@ -347,6 +303,7 @@ def get_clothing():
         'available': webcam_filter.clothing_overlay.get_available_clothing(),
         'current': webcam_filter.clothing_overlay.get_current_clothing()
     })
+
 
 @app.route('/api/clothing/<category>/<item_id>', methods=['POST'])
 def set_clothing_item(category, item_id):
@@ -368,6 +325,7 @@ def set_clothing_item(category, item_id):
     else:
         return jsonify({'error': 'Invalid clothing item or category'}), 400
 
+
 @app.route('/api/clothing/clear', methods=['POST'])
 def clear_clothing():
     """Clear all clothing items."""
@@ -380,6 +338,7 @@ def clear_clothing():
         'current': webcam_filter.clothing_overlay.get_current_clothing()
     })
 
+
 @app.route('/api/measurements', methods=['GET'])
 def get_measurements():
     """Get anthropometric measurements from current frame."""
@@ -388,8 +347,8 @@ def get_measurements():
     
     # Get current frame
     frame = None
-    if webcam_filter.camera and webcam_filter.camera.isOpened():
-        ret, frame = webcam_filter.camera.read()
+    if webcam_filter.camera_manager and webcam_filter.camera_manager.is_available():
+        ret, frame = webcam_filter.camera_manager.read_frame()
         if not ret:
             return jsonify({'error': 'Could not capture frame from camera'}), 500
     else:
@@ -399,6 +358,7 @@ def get_measurements():
     measurements = webcam_filter.anthropometric_measurements.calculate_all_measurements(frame)
     return jsonify(measurements)
 
+
 @app.route('/api/measurements/descriptions', methods=['GET'])
 def get_measurement_descriptions():
     """Get descriptions of all available measurements."""
@@ -407,6 +367,7 @@ def get_measurement_descriptions():
     
     descriptions = webcam_filter.anthropometric_measurements.get_measurement_descriptions()
     return jsonify(descriptions)
+
 
 @app.route('/api/measurements/calibrate', methods=['POST'])
 def calibrate_measurements():
@@ -428,6 +389,7 @@ def calibrate_measurements():
     else:
         return jsonify({'error': 'Invalid calibration ratio'}), 400
 
+
 @app.route('/api/sex-prediction', methods=['GET'])
 def predict_sex():
     """Predict biological sex based on current anthropometric measurements."""
@@ -439,8 +401,8 @@ def predict_sex():
     
     # Get current frame
     frame = None
-    if webcam_filter.camera and webcam_filter.camera.isOpened():
-        ret, frame = webcam_filter.camera.read()
+    if webcam_filter.camera_manager and webcam_filter.camera_manager.is_available():
+        ret, frame = webcam_filter.camera_manager.read_frame()
         if not ret:
             return jsonify({'error': 'Could not capture frame from camera'}), 500
     else:
@@ -460,6 +422,7 @@ def predict_sex():
     
     return jsonify(prediction_result)
 
+
 @app.route('/api/sex-prediction/from-measurements', methods=['POST'])
 def predict_sex_from_measurements():
     """Predict biological sex from provided measurements."""
@@ -474,6 +437,7 @@ def predict_sex_from_measurements():
     prediction_result = webcam_filter.sex_predictor.predict_sex(data)
     
     return jsonify(prediction_result)
+
 
 @app.route('/api/sex-prediction/explanation', methods=['POST'])
 def get_sex_prediction_explanation():
@@ -492,13 +456,16 @@ def get_sex_prediction_explanation():
         'prediction_data': data
     })
 
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not found'}), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
+
 
 if __name__ == '__main__':
     try:

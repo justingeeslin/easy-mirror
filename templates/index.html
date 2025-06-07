@@ -3,134 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Mirror - Webcam with CV Filters</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-</head>
-<body class="mirror">
-    <div class="container">
-        <main>
-            <div class="video-container">
-                <div class="video-wrapper">
-                    <img id="videoStream" src="{{ url_for('video_feed') }}" alt="Video Stream">
-                    <div id="loadingOverlay" class="loading-overlay">
-                        <div class="spinner"></div>
-                        <p>Initializing camera...</p>
-                    </div>
-                    <div id="errorOverlay" class="error-overlay" style="display: none;">
-                        <div class="error-content">
-                            <h3>⚠️ Camera Error</h3>
-                            <p>Unable to access camera. Please check:</p>
-                            <ul>
-                                <li>Camera is connected</li>
-                                <li>Camera permissions are granted</li>
-                                <li>No other application is using the camera</li>
-                            </ul>
-                            <button onclick="location.reload()">Retry</button>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-            <div class="controls glass">
-                <h3>🎨 Filters</h3>
-                <div class="filter-grid" id="filterGrid">
-                    <!-- Filters will be populated by JavaScript -->
-                </div>
-                
-                <div class="control-buttons" style="display:none;">
-                    <button id="refreshBtn" class="btn btn-secondary">
-                        🔄 Refresh Camera
-                    </button>
-                    <button id="fullscreenBtn" class="btn btn-secondary">
-                        🔍 Fullscreen
-                    </button>
-                    <button id="measurementsBtn" class="btn btn-secondary">
-                        📏 Measurements
-                    </button>
-                    <button id="sexPredictionBtn" class="btn btn-secondary">
-                        🧬 Sex Prediction
-                    </button>
-                </div>
-                
-                <!-- Measurements Panel -->
-                <div id="measurementsPanel" class="measurements-panel" style="display: none;">
-                    <h3>📏 Anthropometric Measurements</h3>
-                    <div class="measurements-controls">
-                        <button id="takeMeasurementBtn" class="btn btn-primary">
-                            📐 Take Measurement
-                        </button>
-                        <button id="calibrateBtn" class="btn btn-secondary">
-                            ⚙️ Calibrate
-                        </button>
-                    </div>
-                    <div id="measurementsResults" class="measurements-results">
-                        <p class="measurements-info">Click "Take Measurement" to analyze your pose and calculate body measurements.</p>
-                    </div>
-                    <div id="calibrationPanel" class="calibration-panel" style="display: none;">
-                        <h4>Calibration</h4>
-                        <p>Enter a known measurement to calibrate the system:</p>
-                        <div class="calibration-input">
-                            <label for="knownMeasurement">Known measurement (cm):</label>
-                            <input type="number" id="knownMeasurement" step="0.1" placeholder="e.g., 40.0">
-                            <select id="measurementType">
-                                <option value="shoulder_breadth">Shoulder Breadth</option>
-                                <option value="standing_height">Standing Height</option>
-                                <option value="arm_span">Arm Span</option>
-                            </select>
-                            <button id="setCalibrateBtn" class="btn btn-primary">Set Calibration</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sex Prediction Panel -->
-                <div id="sexPredictionPanel" class="sex-prediction-panel" style="display: none;">
-                    <h3>🧬 Biological Sex Prediction</h3>
-                    <div class="sex-prediction-controls">
-                        <button id="predictSexBtn" class="btn btn-primary">
-                            🔬 Analyze Current Pose
-                        </button>
-                        <button id="showMethodologyBtn" class="btn btn-secondary">
-                            📖 Methodology
-                        </button>
-                    </div>
-                    <div id="sexPredictionResults" class="sex-prediction-results">
-                        <p class="sex-prediction-info">Click "Analyze Current Pose" to predict biological sex based on anthropometric measurements.</p>
-                    </div>
-                    <div id="methodologyPanel" class="methodology-panel" style="display: none;">
-                        <h4>Methodology</h4>
-                        <p>This system uses established patterns of sexual dimorphism in human body measurements:</p>
-                        <ul>
-                            <li><strong>Shoulder-to-hip ratio:</strong> Males typically have broader shoulders relative to hips</li>
-                            <li><strong>Height and limb proportions:</strong> Males often have longer limbs relative to height</li>
-                            <li><strong>Head circumference:</strong> Males typically have larger head circumference</li>
-                            <li><strong>Arm span to height ratio:</strong> Males often have longer arm spans relative to height</li>
-                        </ul>
-                        <p><em>Note: This is for educational/research purposes. Individual variation exists and predictions should be interpreted as estimates only.</em></p>
-                    </div>
-                </div>
-                
-                <footer>
-                    <p>Compatible with Ubuntu and Raspberry Pi | Built with Flask & OpenCV</p>
-                </footer>
-            </div>
-            <div class="status-bar"  style="display:none;">
-                <div class="status-item">
-                    <span class="status-label">Status:</span>
-                    <span id="cameraStatus" class="status-value">Connecting...</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Filter:</span>
-                    <span id="currentFilter" class="status-value">None</span>
-                </div>
-            </div>
-            
-            
-        </main>
-
+    <title>Easy Mirror - Modular Interface</title>
+    
+    <!-- Base styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .video-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        #video-stream {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .controls-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .module-info {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .module-info h3 {
+            margin-bottom: 10px;
+            color: #1a365d;
+        }
+        
+        .module-list {
+            list-style: none;
+        }
+        
+        .module-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .module-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .module-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .module-status.available {
+            background: #48bb78;
+        }
+        
+        .module-status.unavailable {
+            background: #f56565;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls-section {
+                max-height: none;
+            }
+        }
+    </style>
+    
+    <!-- Dynamic module CSS -->
+    <link rel="stylesheet" href="/api/ui/css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🪞 Easy Mirror</h1>
+            <p>Modular Computer Vision Interface</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img id="video-stream" src="/video_feed" alt="Video Stream">
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div id="module-info" class="module-info">
+                    <h3>📦 Available Modules</h3>
+                    <ul id="module-list" class="module-list">
+                        <li class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>Loading modules...</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div id="modular-controls-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading interface...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <script>
+        // Load modular interface
+        async function loadModularInterface() {
+            try {
+                // Load module information
+                const moduleResponse = await fetch('/api/ui/modules');
+                const moduleInfo = await moduleResponse.json();
+                
+                // Update module list
+                const moduleList = document.getElementById('module-list');
+                if (moduleInfo.error) {
+                    moduleList.innerHTML = `<li class="error">Error: ${moduleInfo.error}</li>`;
+                } else {
+                    const modules = Object.values(moduleInfo);
+                    if (modules.length === 0) {
+                        moduleList.innerHTML = '<li>No modules available</li>';
+                    } else {
+                        moduleList.innerHTML = modules.map(module => {
+                            const status = module.dependencies_met ? 'available' : 'unavailable';
+                            const statusText = module.dependencies_met ? 'Available' : 'Dependencies missing';
+                            return `
+                                <li>
+                                    <span class="module-status ${status}" title="${statusText}"></span>
+                                    ${module.name} (${module.class})
+                                </li>
+                            `;
+                        }).join('');
+                    }
+                }
+                
+                // Load modular controls HTML
+                const htmlResponse = await fetch('/api/ui/html');
+                const html = await htmlResponse.text();
+                
+                const container = document.getElementById('modular-controls-container');
+                container.innerHTML = html;
+                
+                console.log('Modular interface loaded successfully');
+                
+            } catch (error) {
+                console.error('Error loading modular interface:', error);
+                const container = document.getElementById('modular-controls-container');
+                container.innerHTML = `
+                    <div class="error">
+                        <h3>Error Loading Interface</h3>
+                        <p>Failed to load modular interface: ${error.message}</p>
+                        <p>Please check the console for more details.</p>
+                    </div>
+                `;
+                
+                const moduleList = document.getElementById('module-list');
+                moduleList.innerHTML = '<li class="error">Failed to load module information</li>';
+            }
+
+            let script = document.createElement('script');
+            script.src = "/api/ui/js";
+            script.onload = () => {
+              console.log("run-last.js loaded and executed");
+            };
+            document.body.appendChild(script);
+        }
+        
+        // Load interface when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadModularInterface);
+        } else {
+            loadModularInterface();
+        }
+        
+        // Refresh video stream if it fails to load
+        const videoStream = document.getElementById('video-stream');
+        videoStream.onerror = function() {
+            console.log('Video stream error, attempting to reload...');
+            setTimeout(() => {
+                this.src = '/video_feed?' + new Date().getTime();
+            }, 1000);
+        };
+    </script>
 </body>
 </html>
