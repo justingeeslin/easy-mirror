@@ -63,7 +63,7 @@ class AnthropometricMeasurements:
         
         # Calibration factor for converting pixel measurements to real-world units
         # This would need to be calibrated based on camera distance and known reference
-        self.pixel_to_cm_ratio = 0.1  # Default: 1 pixel = 0.1 cm (needs calibration)
+        self.pixel_to_cm_ratio = 0.33  # Default: 1 pixel = 0.1 cm (needs calibration)
         
     def get_landmark_position(self, landmarks, landmark_name, frame_width, frame_height):
         """Get the pixel position of a landmark."""

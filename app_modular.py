@@ -201,7 +201,7 @@ webcam_filter = ModularWebcamFilter()
 @app.route('/')
 def index():
     """Serve the main page."""
-    return render_template('index.html')
+    return render_template('modular.html')
 
 @app.route('/modular')
 def modular_index():

@@ -235,7 +235,7 @@ class WebcamFilter:
     
     def clothing_filter(self, frame):
         """Apply clothing overlay filter."""
-        if self.clothing_overlay:
+        if self.clothing_overlay:f
             return self.clothing_overlay.apply_clothing_filter(frame)
         return frame
     

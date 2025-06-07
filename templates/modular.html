@@ -203,8 +203,7 @@
         </div>
     </div>
     
-    <!-- Dynamic module JavaScript -->
-    <script src="/api/ui/js"></script>
+
     
     <script>
         // Load modular interface
@@ -259,6 +258,13 @@
                 const moduleList = document.getElementById('module-list');
                 moduleList.innerHTML = '<li class="error">Failed to load module information</li>';
             }
+
+            let script = document.createElement('script');
+            script.src = "/api/ui/js";
+            script.onload = () => {
+              console.log("run-last.js loaded and executed");
+            };
+            document.body.appendChild(script);
         }
         
         // Load interface when page is ready

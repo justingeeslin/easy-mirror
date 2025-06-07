@@ -226,10 +226,13 @@ class BasicFilters:
         return '''
         // Basic Filters Module JavaScript
         function initBasicFiltersModule() {
+            //console.log('Initializing basic filters module');
             const filterButtons = document.querySelectorAll('[data-module="basic-filters"]');
-            
+            console.log('Initializing basic filters module', filterButtons);
             filterButtons.forEach(button => {
+                console.log(button.innerText);
                 button.addEventListener('click', function() {
+                    console.log('Button clicked');
                     const filterName = this.dataset.filter;
                     setFilter(filterName);
                     
