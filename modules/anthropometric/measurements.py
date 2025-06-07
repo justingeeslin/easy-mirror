@@ -300,6 +300,334 @@ class AnthropometricMeasurements:
             'waist_circumference': 'Estimated waist circumference based on hip width',
             'head_circumference': 'Estimated head circumference based on head width'
         }
+    
+    def generate_ui_html(self):
+        """Generate HTML for anthropometric measurements UI controls."""
+        return '''
+        <div class="module-section" id="anthropometric-section">
+            <h3>📏 Anthropometric Measurements</h3>
+            <div class="measurements-controls">
+                <button id="get-measurements-btn" class="action-btn">
+                    <span class="btn-icon">📐</span>
+                    Get Measurements
+                </button>
+                <button id="calibrate-btn" class="action-btn secondary">
+                    <span class="btn-icon">⚙️</span>
+                    Calibrate
+                </button>
+                <button id="show-descriptions-btn" class="action-btn secondary">
+                    <span class="btn-icon">ℹ️</span>
+                    Info
+                </button>
+            </div>
+            
+            <div id="calibration-panel" class="panel hidden">
+                <h4>Calibration</h4>
+                <p>Enter the pixel-to-cm ratio for accurate measurements:</p>
+                <div class="input-group">
+                    <input type="number" id="calibration-ratio" placeholder="0.1" step="0.01" min="0.01">
+                    <label>pixels per cm</label>
+                </div>
+                <div class="panel-actions">
+                    <button id="apply-calibration-btn" class="action-btn">Apply</button>
+                    <button id="cancel-calibration-btn" class="action-btn secondary">Cancel</button>
+                </div>
+            </div>
+            
+            <div id="measurements-results" class="results-panel hidden">
+                <h4>Measurement Results</h4>
+                <div id="measurements-data"></div>
+            </div>
+            
+            <div id="measurements-descriptions" class="descriptions-panel hidden">
+                <h4>Measurement Descriptions</h4>
+                <div id="descriptions-data"></div>
+            </div>
+        </div>
+        '''
+    
+    def generate_ui_css(self):
+        """Generate CSS for anthropometric measurements UI."""
+        return '''
+        .measurements-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            border: 2px solid #28a745;
+            border-radius: 6px;
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .action-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.secondary {
+            background: white;
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .panel {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .panel.hidden {
+            display: none;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .input-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 120px;
+        }
+        
+        .panel-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .results-panel {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .measurement-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .measurement-item:last-child {
+            border-bottom: none;
+        }
+        
+        .measurement-name {
+            font-weight: 500;
+        }
+        
+        .measurement-value {
+            color: #007bff;
+            font-family: monospace;
+        }
+        
+        .descriptions-panel {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .description-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .description-title {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .description-text {
+            font-size: 13px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+        '''
+    
+    def generate_ui_javascript(self):
+        """Generate JavaScript for anthropometric measurements UI."""
+        return '''
+        // Anthropometric Measurements Module JavaScript
+        function initAnthropometricModule() {
+            const getMeasurementsBtn = document.getElementById('get-measurements-btn');
+            const calibrateBtn = document.getElementById('calibrate-btn');
+            const showDescriptionsBtn = document.getElementById('show-descriptions-btn');
+            const calibrationPanel = document.getElementById('calibration-panel');
+            const resultsPanel = document.getElementById('measurements-results');
+            const descriptionsPanel = document.getElementById('measurements-descriptions');
+            
+            // Get measurements
+            if (getMeasurementsBtn) {
+                getMeasurementsBtn.addEventListener('click', async function() {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="btn-icon">⏳</span> Getting...';
+                    
+                    try {
+                        const response = await fetch('/api/measurements');
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            displayMeasurements(data);
+                            resultsPanel.classList.remove('hidden');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error getting measurements: ' + error.message);
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = '<span class="btn-icon">📐</span> Get Measurements';
+                    }
+                });
+            }
+            
+            // Calibration
+            if (calibrateBtn) {
+                calibrateBtn.addEventListener('click', function() {
+                    calibrationPanel.classList.toggle('hidden');
+                    descriptionsPanel.classList.add('hidden');
+                });
+            }
+            
+            // Apply calibration
+            const applyCalibrateBtn = document.getElementById('apply-calibration-btn');
+            if (applyCalibrateBtn) {
+                applyCalibrateBtn.addEventListener('click', async function() {
+                    const ratio = document.getElementById('calibration-ratio').value;
+                    if (!ratio || ratio <= 0) {
+                        alert('Please enter a valid calibration ratio');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('/api/measurements/calibrate', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({pixel_to_cm_ratio: parseFloat(ratio)})
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            alert('Calibration applied successfully!');
+                            calibrationPanel.classList.add('hidden');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error applying calibration: ' + error.message);
+                    }
+                });
+            }
+            
+            // Cancel calibration
+            const cancelCalibrateBtn = document.getElementById('cancel-calibration-btn');
+            if (cancelCalibrateBtn) {
+                cancelCalibrateBtn.addEventListener('click', function() {
+                    calibrationPanel.classList.add('hidden');
+                });
+            }
+            
+            // Show descriptions
+            if (showDescriptionsBtn) {
+                showDescriptionsBtn.addEventListener('click', async function() {
+                    if (descriptionsPanel.classList.contains('hidden')) {
+                        try {
+                            const response = await fetch('/api/measurements/descriptions');
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                displayDescriptions(data);
+                                descriptionsPanel.classList.remove('hidden');
+                                calibrationPanel.classList.add('hidden');
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        } catch (error) {
+                            alert('Error getting descriptions: ' + error.message);
+                        }
+                    } else {
+                        descriptionsPanel.classList.add('hidden');
+                    }
+                });
+            }
+        }
+        
+        function displayMeasurements(data) {
+            const container = document.getElementById('measurements-data');
+            if (!container) return;
+            
+            let html = '';
+            
+            if (data.pose_detected) {
+                // Display measurements
+                Object.entries(data).forEach(([key, value]) => {
+                    if (key !== 'pose_detected' && key !== 'timestamp') {
+                        const displayName = key.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                        const displayValue = typeof value === 'number' ? value.toFixed(2) + ' cm' : value;
+                        
+                        html += `
+                            <div class="measurement-item">
+                                <span class="measurement-name">${displayName}</span>
+                                <span class="measurement-value">${displayValue}</span>
+                            </div>
+                        `;
+                    }
+                });
+            } else {
+                html = '<p style="color: #dc3545;">No pose detected in current frame. Please ensure you are visible in the camera.</p>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function displayDescriptions(data) {
+            const container = document.getElementById('descriptions-data');
+            if (!container) return;
+            
+            let html = '';
+            Object.entries(data).forEach(([key, description]) => {
+                const displayName = key.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                html += `
+                    <div class="description-item">
+                        <div class="description-title">${displayName}</div>
+                        <div class="description-text">${description}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAnthropometricModule);
+        } else {
+            initAnthropometricModule();
+        }
+        '''
 
 # Import time for timestamps
 import time

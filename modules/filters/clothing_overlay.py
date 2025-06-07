@@ -258,3 +258,221 @@ class ClothingOverlay:
         """Remove all clothing items."""
         for category in self.current_clothing:
             self.current_clothing[category] = None
+    
+    def generate_ui_html(self):
+        """Generate HTML for clothing overlay UI controls."""
+        html = '''
+        <div class="module-section" id="clothing-section">
+            <h3>👕 Virtual Clothing</h3>
+            <div class="clothing-controls">
+                <button id="clear-clothing-btn" class="action-btn secondary">
+                    <span class="btn-icon">🧹</span>
+                    Clear All
+                </button>
+                <button id="clothing-filter-btn" class="filter-btn" data-filter="clothing" data-module="clothing">
+                    <span class="filter-icon">👔</span>
+                    <span class="filter-name">Clothing Filter</span>
+                </button>
+            </div>
+        '''
+        
+        # Generate clothing categories
+        for category, items in self.clothing_config['clothing_items'].items():
+            category_display = category.replace('_', ' ').title()
+            html += f'''
+            <div class="clothing-category">
+                <h4>{category_display}</h4>
+                <div class="clothing-items">
+                    <button class="clothing-item-btn" data-category="{category}" data-item="none">
+                        <span class="item-icon">❌</span>
+                        <span class="item-name">None</span>
+                    </button>
+            '''
+            
+            for item_id, item_config in items.items():
+                active_class = 'active' if self.current_clothing.get(category) == item_id else ''
+                html += f'''
+                    <button class="clothing-item-btn {active_class}" 
+                            data-category="{category}" 
+                            data-item="{item_id}"
+                            title="{item_config.get('description', item_config['name'])}">
+                        <span class="item-icon">{item_config.get('icon', '👔')}</span>
+                        <span class="item-name">{item_config['name']}</span>
+                    </button>
+                '''
+            
+            html += '''
+                </div>
+            </div>
+            '''
+        
+        html += '''
+        </div>
+        '''
+        return html
+    
+    def generate_ui_css(self):
+        """Generate CSS for clothing overlay UI."""
+        return '''
+        .clothing-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .clothing-category {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .clothing-category h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .clothing-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .clothing-item-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 70px;
+        }
+        
+        .clothing-item-btn:hover {
+            border-color: #17a2b8;
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        
+        .clothing-item-btn.active {
+            border-color: #17a2b8;
+            background: #e1f5fe;
+            box-shadow: 0 2px 8px rgba(23,162,184,0.3);
+        }
+        
+        .item-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .item-name {
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+        '''
+    
+    def generate_ui_javascript(self):
+        """Generate JavaScript for clothing overlay UI."""
+        return '''
+        // Clothing Overlay Module JavaScript
+        function initClothingModule() {
+            const clearBtn = document.getElementById('clear-clothing-btn');
+            const clothingFilterBtn = document.getElementById('clothing-filter-btn');
+            const clothingItemBtns = document.querySelectorAll('.clothing-item-btn');
+            
+            // Clear all clothing
+            if (clearBtn) {
+                clearBtn.addEventListener('click', async function() {
+                    try {
+                        const response = await fetch('/api/clothing/clear', {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            // Update UI to show no items selected
+                            clothingItemBtns.forEach(btn => {
+                                btn.classList.remove('active');
+                                if (btn.dataset.item === 'none') {
+                                    btn.classList.add('active');
+                                }
+                            });
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error clearing clothing: ' + error.message);
+                    }
+                });
+            }
+            
+            // Clothing filter toggle
+            if (clothingFilterBtn) {
+                clothingFilterBtn.addEventListener('click', function() {
+                    const isActive = this.classList.contains('active');
+                    
+                    // Remove active from all filter buttons
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    if (!isActive) {
+                        this.classList.add('active');
+                        setFilter('clothing');
+                    } else {
+                        setFilter('none');
+                    }
+                });
+            }
+            
+            // Clothing item selection
+            clothingItemBtns.forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const category = this.dataset.category;
+                    const itemId = this.dataset.item;
+                    
+                    try {
+                        const response = await fetch(`/api/clothing/${category}/${itemId}`, {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            // Update UI for this category
+                            const categoryBtns = document.querySelectorAll(`[data-category="${category}"]`);
+                            categoryBtns.forEach(categoryBtn => {
+                                categoryBtn.classList.remove('active');
+                            });
+                            this.classList.add('active');
+                            
+                            // Automatically enable clothing filter if an item is selected
+                            if (itemId !== 'none' && clothingFilterBtn) {
+                                document.querySelectorAll('.filter-btn').forEach(filterBtn => {
+                                    filterBtn.classList.remove('active');
+                                });
+                                clothingFilterBtn.classList.add('active');
+                                setFilter('clothing');
+                            }
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error setting clothing item: ' + error.message);
+                    }
+                });
+            });
+        }
+        
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initClothingModule);
+        } else {
+            initClothingModule();
+        }
+        '''

@@ -385,6 +385,317 @@ class SexPredictor:
         explanation += f"in human anthropometry and should be interpreted as an estimate only."
         
         return explanation
+    
+    def generate_ui_html(self, measurements_available=True):
+        """Generate HTML for sex prediction UI controls."""
+        if not measurements_available:
+            return '''
+            <div class="module-section" id="sex-prediction-section">
+                <h3>🧬 Biological Sex Prediction</h3>
+                <div class="dependency-warning">
+                    <p>⚠️ This module requires anthropometric measurements to be available.</p>
+                    <p>Please ensure the measurements module is enabled.</p>
+                </div>
+            </div>
+            '''
+        
+        return '''
+        <div class="module-section" id="sex-prediction-section">
+            <h3>🧬 Biological Sex Prediction</h3>
+            <div class="prediction-controls">
+                <button id="predict-sex-btn" class="action-btn">
+                    <span class="btn-icon">🔮</span>
+                    Predict from Camera
+                </button>
+                <button id="predict-from-manual-btn" class="action-btn secondary">
+                    <span class="btn-icon">📝</span>
+                    Manual Input
+                </button>
+                <button id="show-methodology-btn" class="action-btn secondary">
+                    <span class="btn-icon">📚</span>
+                    Methodology
+                </button>
+            </div>
+            
+            <div id="manual-input-panel" class="panel hidden">
+                <h4>Manual Measurement Input</h4>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>Height (cm):</label>
+                        <input type="number" id="manual-height" placeholder="175" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Shoulder Breadth (cm):</label>
+                        <input type="number" id="manual-shoulder" placeholder="42" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Head Circumference (cm):</label>
+                        <input type="number" id="manual-head" placeholder="57" step="0.1">
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button id="predict-manual-btn" class="action-btn">Predict</button>
+                    <button id="cancel-manual-btn" class="action-btn secondary">Cancel</button>
+                </div>
+            </div>
+            
+            <div id="prediction-results" class="results-panel hidden">
+                <h4>Prediction Results</h4>
+                <div id="prediction-data"></div>
+            </div>
+            
+            <div id="methodology-panel" class="panel hidden">
+                <h4>Prediction Methodology</h4>
+                <p>This system uses established patterns of sexual dimorphism in human body measurements to make predictions.</p>
+                <ul>
+                    <li><strong>Shoulder Breadth:</strong> Males typically have broader shoulders</li>
+                    <li><strong>Height:</strong> Males are typically taller on average</li>
+                    <li><strong>Head Circumference:</strong> Males typically have larger head circumference</li>
+                    <li><strong>Body Ratios:</strong> Various body proportions show sexual dimorphism</li>
+                </ul>
+                <p><em>Note: These are statistical patterns and individual variation exists. Predictions are for research/educational purposes.</em></p>
+            </div>
+        </div>
+        '''
+    
+    def generate_ui_css(self):
+        """Generate CSS for sex prediction UI."""
+        return '''
+        .prediction-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .dependency-warning {
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            color: #856404;
+            margin-top: 10px;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .prediction-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .prediction-result.male {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+        }
+        
+        .prediction-result.female {
+            background: #fce4ec;
+            border: 2px solid #e91e63;
+        }
+        
+        .prediction-result.unknown {
+            background: #f5f5f5;
+            border: 2px solid #9e9e9e;
+        }
+        
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .prediction-sex {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .prediction-confidence {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .contributing-factors {
+            margin-top: 10px;
+        }
+        
+        .factor-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .factor-item:last-child {
+            border-bottom: none;
+        }
+        '''
+    
+    def generate_ui_javascript(self):
+        """Generate JavaScript for sex prediction UI."""
+        return '''
+        // Sex Prediction Module JavaScript
+        function initSexPredictionModule() {
+            const predictBtn = document.getElementById('predict-sex-btn');
+            const manualBtn = document.getElementById('predict-from-manual-btn');
+            const methodologyBtn = document.getElementById('show-methodology-btn');
+            const manualPanel = document.getElementById('manual-input-panel');
+            const resultsPanel = document.getElementById('prediction-results');
+            const methodologyPanel = document.getElementById('methodology-panel');
+            
+            // Predict from camera
+            if (predictBtn) {
+                predictBtn.addEventListener('click', async function() {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="btn-icon">⏳</span> Predicting...';
+                    
+                    try {
+                        const response = await fetch('/api/sex-prediction');
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            displayPredictionResults(data);
+                            resultsPanel.classList.remove('hidden');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error getting prediction: ' + error.message);
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = '<span class="btn-icon">🔮</span> Predict from Camera';
+                    }
+                });
+            }
+            
+            // Manual input
+            if (manualBtn) {
+                manualBtn.addEventListener('click', function() {
+                    manualPanel.classList.toggle('hidden');
+                    methodologyPanel.classList.add('hidden');
+                });
+            }
+            
+            // Predict from manual input
+            const predictManualBtn = document.getElementById('predict-manual-btn');
+            if (predictManualBtn) {
+                predictManualBtn.addEventListener('click', async function() {
+                    const height = document.getElementById('manual-height').value;
+                    const shoulder = document.getElementById('manual-shoulder').value;
+                    const head = document.getElementById('manual-head').value;
+                    
+                    if (!height || !shoulder || !head) {
+                        alert('Please fill in all measurement fields');
+                        return;
+                    }
+                    
+                    const measurements = {
+                        pose_detected: true,
+                        height_cm: parseFloat(height),
+                        shoulder_breadth_cm: parseFloat(shoulder),
+                        head_circumference_cm: parseFloat(head),
+                        shoulder_to_hip_ratio: 1.2, // Default estimate
+                        head_to_shoulder_ratio: 0.25, // Default estimate
+                        arm_span_to_height_ratio: 1.0 // Default estimate
+                    };
+                    
+                    try {
+                        const response = await fetch('/api/sex-prediction/from-measurements', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(measurements)
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            displayPredictionResults(data);
+                            resultsPanel.classList.remove('hidden');
+                            manualPanel.classList.add('hidden');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error getting prediction: ' + error.message);
+                    }
+                });
+            }
+            
+            // Cancel manual input
+            const cancelManualBtn = document.getElementById('cancel-manual-btn');
+            if (cancelManualBtn) {
+                cancelManualBtn.addEventListener('click', function() {
+                    manualPanel.classList.add('hidden');
+                });
+            }
+            
+            // Show methodology
+            if (methodologyBtn) {
+                methodologyBtn.addEventListener('click', function() {
+                    methodologyPanel.classList.toggle('hidden');
+                    manualPanel.classList.add('hidden');
+                });
+            }
+        }
+        
+        function displayPredictionResults(data) {
+            const container = document.getElementById('prediction-data');
+            if (!container) return;
+            
+            const prediction = data.predicted_sex || data.prediction || 'Unknown';
+            const confidence = data.confidence || data.certainty || 0;
+            const factors = data.contributing_factors || [];
+            
+            let resultClass = 'unknown';
+            if (prediction.toLowerCase().includes('male') && !prediction.toLowerCase().includes('female')) {
+                resultClass = 'male';
+            } else if (prediction.toLowerCase().includes('female')) {
+                resultClass = 'female';
+            }
+            
+            let html = `
+                <div class="prediction-result ${resultClass}">
+                    <div class="prediction-header">
+                        <span class="prediction-sex">Predicted: ${prediction}</span>
+                        <span class="prediction-confidence">Confidence: ${(confidence * 100).toFixed(1)}%</span>
+                    </div>
+            `;
+            
+            if (factors.length > 0) {
+                html += '<div class="contributing-factors"><strong>Contributing Factors:</strong>';
+                factors.forEach(factor => {
+                    html += `<div class="factor-item">${factor}</div>`;
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            // Add explanation if available
+            if (data.explanation) {
+                html += `<div class="explanation-text">${data.explanation}</div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSexPredictionModule);
+        } else {
+            initSexPredictionModule();
+        }
+        '''
 
 
 def create_sex_prediction_demo():

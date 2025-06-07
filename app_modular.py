@@ -45,6 +45,13 @@ except ImportError:
     SEX_PREDICTION_AVAILABLE = False
     logging.warning("Sex prediction module not available")
 
+try:
+    from modules.ui_manager import UIManager
+    UI_MANAGER_AVAILABLE = True
+except ImportError:
+    UI_MANAGER_AVAILABLE = False
+    logging.warning("UI manager not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,6 +65,12 @@ class ModularWebcamFilter:
     
     def __init__(self):
         self.current_filter = 'none'
+        
+        # Initialize UI manager
+        if UI_MANAGER_AVAILABLE:
+            self.ui_manager = UIManager()
+        else:
+            self.ui_manager = None
         self.is_running = False
         self.frame_lock = threading.Lock()
         self.latest_frame = None
@@ -108,6 +121,19 @@ class ModularWebcamFilter:
                 logger.error(f"Failed to initialize sex prediction: {e}")
         elif SEX_PREDICTION_AVAILABLE and not MEASUREMENTS_AVAILABLE:
             logger.warning("Sex prediction available but anthropometric measurements not available - sex prediction disabled")
+        
+        # Register modules with UI manager
+        if self.ui_manager:
+            if self.basic_filters:
+                self.ui_manager.register_module('basic_filters', self.basic_filters)
+            if self.clothing_overlay:
+                self.ui_manager.register_module('clothing', self.clothing_overlay)
+            if self.anthropometric_measurements:
+                self.ui_manager.register_module('anthropometric', self.anthropometric_measurements)
+            if self.sex_predictor:
+                self.ui_manager.register_module('sex_prediction', self.sex_predictor, dependencies=['anthropometric'])
+            
+            logger.info(f"Registered {len(self.ui_manager.get_available_modules())} modules with UI manager")
         
         # Build available filters list
         self.available_filters = ['none']
@@ -177,6 +203,41 @@ def index():
     """Serve the main page."""
     return render_template('index.html')
 
+@app.route('/modular')
+def modular_index():
+    """Serve the modular interface page."""
+    return render_template('modular.html')
+
+@app.route('/api/ui/html')
+def get_modular_html():
+    """Get combined HTML from all modules."""
+    if webcam_filter.ui_manager:
+        return webcam_filter.ui_manager.generate_combined_html()
+    return '<div>UI Manager not available</div>'
+
+@app.route('/api/ui/css')
+def get_modular_css():
+    """Get combined CSS from all modules."""
+    if webcam_filter.ui_manager:
+        css = webcam_filter.ui_manager.generate_combined_css()
+        return Response(css, mimetype='text/css')
+    return Response('/* UI Manager not available */', mimetype='text/css')
+
+@app.route('/api/ui/js')
+def get_modular_js():
+    """Get combined JavaScript from all modules."""
+    if webcam_filter.ui_manager:
+        js = webcam_filter.ui_manager.generate_combined_javascript()
+        return Response(js, mimetype='application/javascript')
+    return Response('// UI Manager not available', mimetype='application/javascript')
+
+@app.route('/api/ui/modules')
+def get_module_info():
+    """Get information about available modules."""
+    if webcam_filter.ui_manager:
+        return jsonify(webcam_filter.ui_manager.get_module_info())
+    return jsonify({'error': 'UI Manager not available'})
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -204,7 +265,7 @@ def get_filters():
     })
 
 
-@app.route('/api/filter', methods=['POST'])
+@app.route('/set_filter', methods=['POST'])
 def set_filter():
     """Set the current filter."""
     data = request.get_json()
