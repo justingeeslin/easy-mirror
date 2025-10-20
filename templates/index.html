@@ -38,18 +38,21 @@
                     <!-- Filters will be populated by JavaScript -->
                 </div>
                 
-                <div class="control-buttons" style="display:none;">
+                <div class="control-buttons">
                     <button id="refreshBtn" class="btn btn-secondary">
                         🔄 Refresh Camera
                     </button>
                     <button id="fullscreenBtn" class="btn btn-secondary">
                         🔍 Fullscreen
                     </button>
-                    <button id="measurementsBtn" class="btn btn-secondary">
+                    <button id="measurementsBtn" class="btn btn-secondary" style="display: none;">
                         📏 Measurements
                     </button>
-                    <button id="sexPredictionBtn" class="btn btn-secondary">
+                    <button id="sexPredictionBtn" class="btn btn-secondary" style="display: none;">
                         🧬 Sex Prediction
+                    </button>
+                    <button id="slimmingBtn" class="btn btn-secondary" style="display: none;">
+                        ✨ Body Slimming
                     </button>
                 </div>
                 
@@ -107,6 +110,66 @@
                             <li><strong>Arm span to height ratio:</strong> Males often have longer arm spans relative to height</li>
                         </ul>
                         <p><em>Note: This is for educational/research purposes. Individual variation exists and predictions should be interpreted as estimates only.</em></p>
+                    </div>
+                </div>
+                
+                <!-- Body Slimming Panel -->
+                <div id="slimmingPanel" class="slimming-panel" style="display: none;">
+                    <h3>✨ Body Slimming</h3>
+                    <div class="slimming-controls">
+                        <div class="slimming-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="slimmingEnabled">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Enable Slimming</span>
+                        </div>
+                        
+                        <div class="slimming-intensity">
+                            <label for="slimmingIntensity">Slimming Intensity:</label>
+                            <div class="slider-container">
+                                <input type="range" id="slimmingIntensity" min="0" max="100" value="0" class="slider">
+                                <span id="intensityValue" class="slider-value">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="slimming-region">
+                            <label for="slimmingRegion">Slimming Region:</label>
+                            <select id="slimmingRegion" class="region-select">
+                                <option value="waist">Waist</option>
+                                <option value="torso">Torso</option>
+                                <option value="upper_body">Upper Body</option>
+                                <option value="lower_body">Lower Body</option>
+                                <option value="full_body">Full Body</option>
+                                <option value="arms">Arms</option>
+                                <option value="legs">Legs</option>
+                                <option value="custom">Custom Landmarks</option>
+                            </select>
+                        </div>
+                        
+                        <div id="customLandmarks" class="custom-landmarks" style="display: none;">
+                            <div class="landmark-selection">
+                                <label for="startLandmark">Start Landmark:</label>
+                                <select id="startLandmark" class="landmark-select">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="landmark-selection">
+                                <label for="endLandmark">End Landmark:</label>
+                                <select id="endLandmark" class="landmark-select">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="slimming-info">
+                            <p class="info-text">
+                                <strong>How it works:</strong> Body slimming uses pose landmarks to identify body regions and applies directional compression to create a slimming effect. The intensity controls how much slimming is applied.
+                            </p>
+                            <p class="warning-text">
+                                <em>Note: This is a visual effect only. Results may vary based on pose and lighting conditions.</em>
+                            </p>
+                        </div>
                     </div>
                 </div>
                 
