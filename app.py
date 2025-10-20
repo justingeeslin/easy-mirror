@@ -44,6 +44,14 @@ except ImportError:
     SEX_PREDICTION_AVAILABLE = False
     logging.warning("Sex prediction not available")
 
+# Import body slimming system
+try:
+    from body_slimming import BodySlimming
+    BODY_SLIMMING_AVAILABLE = True
+except ImportError:
+    BODY_SLIMMING_AVAILABLE = False
+    logging.warning("Body slimming not available - install mediapipe to enable slimming filters")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -85,6 +93,15 @@ class WebcamFilter:
                 logger.info("Sex prediction system initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize sex prediction: {e}")
+        
+        # Initialize body slimming system
+        self.body_slimming = None
+        if BODY_SLIMMING_AVAILABLE:
+            try:
+                self.body_slimming = BodySlimming()
+                logger.info("Body slimming system initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize body slimming: {e}")
         
         # Available filters
         self.filters = {
@@ -239,6 +256,12 @@ class WebcamFilter:
             return self.clothing_overlay.apply_clothing_filter(frame)
         return frame
     
+    def slimming_filter(self, frame):
+        """Apply body slimming filter."""
+        if self.body_slimming:
+            return self.body_slimming.apply_slimming_filter(frame)
+        return frame
+    
     def get_frame(self):
         """Capture and process a frame."""
         if not self.camera or not self.camera.isOpened():
@@ -256,6 +279,13 @@ class WebcamFilter:
                 logger.error(f"Error applying filter {self.current_filter}: {e}")
                 # Fall back to no filter
                 frame = self.no_filter(frame)
+        
+        # Apply body slimming if enabled
+        if BODY_SLIMMING_AVAILABLE and self.body_slimming:
+            try:
+                frame = self.body_slimming.apply_slimming_filter(frame)
+            except Exception as e:
+                logger.error(f"Error applying body slimming: {e}")
         
         # Encode frame as JPEG
         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
@@ -334,7 +364,8 @@ def get_status():
         'current_filter': webcam_filter.current_filter,
         'filters_count': len(webcam_filter.get_available_filters()),
         'clothing_available': CLOTHING_AVAILABLE,
-        'measurements_available': MEASUREMENTS_AVAILABLE
+        'measurements_available': MEASUREMENTS_AVAILABLE,
+        'body_slimming_available': BODY_SLIMMING_AVAILABLE
     })
 
 @app.route('/api/clothing', methods=['GET'])
@@ -490,6 +521,85 @@ def get_sex_prediction_explanation():
     return jsonify({
         'explanation': explanation,
         'prediction_data': data
+    })
+
+@app.route('/api/slimming', methods=['GET'])
+def get_slimming_parameters():
+    """Get current body slimming parameters."""
+    if not webcam_filter.body_slimming:
+        return jsonify({'error': 'Body slimming system not available'}), 400
+    
+    return jsonify(webcam_filter.body_slimming.get_current_parameters())
+
+@app.route('/api/slimming/parameters', methods=['POST'])
+def set_slimming_parameters():
+    """Set body slimming parameters."""
+    if not webcam_filter.body_slimming:
+        return jsonify({'error': 'Body slimming system not available'}), 400
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    try:
+        intensity = data.get('intensity')
+        start_landmark = data.get('start_landmark')
+        end_landmark = data.get('end_landmark')
+        enabled = data.get('enabled')
+        
+        webcam_filter.body_slimming.set_slimming_parameters(
+            intensity=intensity,
+            start_landmark=start_landmark,
+            end_landmark=end_landmark,
+            enabled=enabled
+        )
+        
+        return jsonify({
+            'success': True,
+            'parameters': webcam_filter.body_slimming.get_current_parameters()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error setting slimming parameters: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/slimming/region/<region_name>', methods=['POST'])
+def set_slimming_region(region_name):
+    """Set slimming region using predefined regions."""
+    if not webcam_filter.body_slimming:
+        return jsonify({'error': 'Body slimming system not available'}), 400
+    
+    if webcam_filter.body_slimming.set_slimming_region(region_name):
+        return jsonify({
+            'success': True,
+            'region': region_name,
+            'parameters': webcam_filter.body_slimming.get_current_parameters()
+        })
+    else:
+        return jsonify({'error': f'Invalid region: {region_name}'}), 400
+
+@app.route('/api/slimming/enable', methods=['POST'])
+def toggle_slimming():
+    """Enable or disable body slimming."""
+    if not webcam_filter.body_slimming:
+        return jsonify({'error': 'Body slimming system not available'}), 400
+    
+    data = request.get_json()
+    enabled = data.get('enabled', True) if data else True
+    
+    # Get current parameters to preserve intensity when toggling
+    current_params = webcam_filter.body_slimming.get_current_parameters()
+    current_intensity = current_params.get('intensity', 0.5)
+    
+    webcam_filter.body_slimming.set_slimming_parameters(
+        intensity=current_intensity,
+        enabled=enabled
+    )
+    
+    return jsonify({
+        'success': True,
+        'enabled': enabled,
+        'parameters': webcam_filter.body_slimming.get_current_parameters()
     })
 
 @app.errorhandler(404)

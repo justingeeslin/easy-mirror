@@ -10,6 +10,8 @@ class EasyMirror {
         this.availableClothing = {};
         this.measurementsAvailable = false;
         this.measurementDescriptions = {};
+        this.slimmingAvailable = false;
+        this.slimmingParameters = {};
         this.init();
     }
 
@@ -18,6 +20,7 @@ class EasyMirror {
         this.loadFilters();
         this.loadClothing();
         this.loadMeasurements();
+        this.loadSlimming();
         this.startStatusCheck();
         this.hideLoadingOverlay();
     }
@@ -66,6 +69,32 @@ class EasyMirror {
         // Show methodology button
         document.getElementById('showMethodologyBtn').addEventListener('click', () => {
             this.toggleMethodologyPanel();
+        });
+
+        // Body slimming button
+        document.getElementById('slimmingBtn').addEventListener('click', () => {
+            this.toggleSlimmingPanel();
+        });
+
+        // Slimming controls
+        document.getElementById('slimmingEnabled').addEventListener('change', (e) => {
+            this.toggleSlimming(e.target.checked);
+        });
+
+        document.getElementById('slimmingIntensity').addEventListener('input', (e) => {
+            this.updateSlimmingIntensity(e.target.value);
+        });
+
+        document.getElementById('slimmingRegion').addEventListener('change', (e) => {
+            this.updateSlimmingRegion(e.target.value);
+        });
+
+        document.getElementById('startLandmark').addEventListener('change', (e) => {
+            this.updateCustomLandmarks();
+        });
+
+        document.getElementById('endLandmark').addEventListener('change', (e) => {
+            this.updateCustomLandmarks();
         });
 
         // Video stream load events
@@ -368,11 +397,23 @@ class EasyMirror {
             }
             
             // Update measurements availability
-            if (data.measurements_available && !this.measurementsAvailable) {
-                this.loadMeasurements();
+            if (data.measurements_available) {
+                if (!this.measurementsAvailable) {
+                    this.loadMeasurements();
+                }
                 document.getElementById('measurementsBtn').style.display = 'inline-block';
-            } else if (!data.measurements_available) {
+            } else {
                 document.getElementById('measurementsBtn').style.display = 'none';
+            }
+            
+            // Update body slimming availability
+            if (data.body_slimming_available) {
+                if (!this.slimmingAvailable) {
+                    this.loadSlimming();
+                }
+                document.getElementById('slimmingBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('slimmingBtn').style.display = 'none';
             }
         } catch (error) {
             console.error('Error checking status:', error);
@@ -857,6 +898,192 @@ class EasyMirror {
         `;
 
         resultsDiv.innerHTML = html;
+    }
+
+    // Body Slimming Methods
+    async loadSlimming() {
+        try {
+            const response = await fetch('/api/slimming');
+            if (response.ok) {
+                const data = await response.json();
+                this.slimmingAvailable = true;
+                this.slimmingParameters = data;
+                this.updateSlimmingUI();
+                this.populateLandmarkOptions();
+            }
+        } catch (error) {
+            console.error('Error loading slimming parameters:', error);
+            this.slimmingAvailable = false;
+        }
+    }
+
+    toggleSlimmingPanel() {
+        const panel = document.getElementById('slimmingPanel');
+        const isVisible = panel.style.display !== 'none';
+        
+        // Hide other panels
+        document.getElementById('measurementsPanel').style.display = 'none';
+        document.getElementById('sexPredictionPanel').style.display = 'none';
+        
+        panel.style.display = isVisible ? 'none' : 'block';
+    }
+
+    async toggleSlimming(enabled) {
+        try {
+            const response = await fetch('/api/slimming/enable', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: enabled })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.slimmingParameters = data.parameters;
+                this.updateSlimmingUI();
+            }
+        } catch (error) {
+            console.error('Error toggling slimming:', error);
+        }
+    }
+
+    async updateSlimmingIntensity(intensity) {
+        document.getElementById('intensityValue').textContent = intensity + '%';
+        
+        try {
+            const response = await fetch('/api/slimming/parameters', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ intensity: parseFloat(intensity) })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.slimmingParameters = data.parameters;
+            }
+        } catch (error) {
+            console.error('Error updating slimming intensity:', error);
+        }
+    }
+
+    async updateSlimmingRegion(region) {
+        const customLandmarks = document.getElementById('customLandmarks');
+        customLandmarks.style.display = region === 'custom' ? 'block' : 'none';
+        
+        if (region !== 'custom') {
+            try {
+                const response = await fetch(`/api/slimming/region/${region}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.slimmingParameters = data.parameters;
+                    this.updateSlimmingUI();
+                }
+            } catch (error) {
+                console.error('Error updating slimming region:', error);
+            }
+        }
+    }
+
+    async updateCustomLandmarks() {
+        const startLandmark = document.getElementById('startLandmark').value;
+        const endLandmark = document.getElementById('endLandmark').value;
+        
+        if (startLandmark && endLandmark) {
+            try {
+                const response = await fetch('/api/slimming/parameters', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        start_landmark: parseInt(startLandmark),
+                        end_landmark: parseInt(endLandmark)
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.slimmingParameters = data.parameters;
+                }
+            } catch (error) {
+                console.error('Error updating custom landmarks:', error);
+            }
+        }
+    }
+
+    updateSlimmingUI() {
+        if (this.slimmingParameters) {
+            document.getElementById('slimmingEnabled').checked = this.slimmingParameters.enabled || false;
+            document.getElementById('slimmingIntensity').value = this.slimmingParameters.intensity || 0;
+            document.getElementById('intensityValue').textContent = (this.slimmingParameters.intensity || 0) + '%';
+            
+            if (this.slimmingParameters.start_landmark !== undefined && this.slimmingParameters.end_landmark !== undefined) {
+                document.getElementById('startLandmark').value = this.slimmingParameters.start_landmark;
+                document.getElementById('endLandmark').value = this.slimmingParameters.end_landmark;
+            }
+        }
+    }
+
+    populateLandmarkOptions() {
+        const landmarks = [
+            { value: 0, name: 'Nose' },
+            { value: 1, name: 'Left Eye Inner' },
+            { value: 2, name: 'Left Eye' },
+            { value: 3, name: 'Left Eye Outer' },
+            { value: 4, name: 'Right Eye Inner' },
+            { value: 5, name: 'Right Eye' },
+            { value: 6, name: 'Right Eye Outer' },
+            { value: 7, name: 'Left Ear' },
+            { value: 8, name: 'Right Ear' },
+            { value: 9, name: 'Mouth Left' },
+            { value: 10, name: 'Mouth Right' },
+            { value: 11, name: 'Left Shoulder' },
+            { value: 12, name: 'Right Shoulder' },
+            { value: 13, name: 'Left Elbow' },
+            { value: 14, name: 'Right Elbow' },
+            { value: 15, name: 'Left Wrist' },
+            { value: 16, name: 'Right Wrist' },
+            { value: 17, name: 'Left Pinky' },
+            { value: 18, name: 'Right Pinky' },
+            { value: 19, name: 'Left Index' },
+            { value: 20, name: 'Right Index' },
+            { value: 21, name: 'Left Thumb' },
+            { value: 22, name: 'Right Thumb' },
+            { value: 23, name: 'Left Hip' },
+            { value: 24, name: 'Right Hip' },
+            { value: 25, name: 'Left Knee' },
+            { value: 26, name: 'Right Knee' },
+            { value: 27, name: 'Left Ankle' },
+            { value: 28, name: 'Right Ankle' },
+            { value: 29, name: 'Left Heel' },
+            { value: 30, name: 'Right Heel' },
+            { value: 31, name: 'Left Foot Index' },
+            { value: 32, name: 'Right Foot Index' }
+        ];
+
+        const startSelect = document.getElementById('startLandmark');
+        const endSelect = document.getElementById('endLandmark');
+        
+        landmarks.forEach(landmark => {
+            const option1 = document.createElement('option');
+            option1.value = landmark.value;
+            option1.textContent = landmark.name;
+            startSelect.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = landmark.value;
+            option2.textContent = landmark.name;
+            endSelect.appendChild(option2);
+        });
     }
 
     destroy() {
